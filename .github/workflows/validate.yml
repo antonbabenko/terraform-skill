@@ -1,0 +1,147 @@
+name: Validate Skill
+
+on:
+  pull_request:
+    paths:
+      - 'SKILL.md'
+      - 'references/**/*.md'
+      - '.claude-plugin/**'
+  push:
+    branches: [master, main]
+    paths:
+      - 'SKILL.md'
+      - 'references/**/*.md'
+      - '.claude-plugin/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Skill Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies
+        run: pip install pyyaml
+
+      - name: Check SKILL.md Frontmatter
+        run: |
+          python3 << 'EOF'
+          import yaml
+          import sys
+          import re
+
+          print("🔍 Validating SKILL.md frontmatter...")
+
+          with open('SKILL.md', 'r') as f:
+              content = f.read()
+
+          if not content.startswith('---'):
+              print("❌ ERROR: No frontmatter found")
+              sys.exit(1)
+
+          parts = content.split('---', 2)
+          if len(parts) < 3:
+              print("❌ ERROR: Invalid frontmatter format")
+              sys.exit(1)
+
+          frontmatter = yaml.safe_load(parts[1])
+
+          if 'name' not in frontmatter or 'description' not in frontmatter:
+              print("❌ ERROR: Missing required fields")
+              sys.exit(1)
+
+          allowed = {'name', 'description'}
+          extra = set(frontmatter.keys()) - allowed
+
+          if extra:
+              print(f"❌ ERROR: Extra fields: {extra}")
+              print("   Only 'name' and 'description' allowed")
+              sys.exit(1)
+
+          name = frontmatter['name']
+          if not re.match(r'^[a-zA-Z0-9-]+$', name):
+              print(f"❌ ERROR: Invalid name: {name}")
+              sys.exit(1)
+
+          desc_len = len(frontmatter['description'])
+          if desc_len > 1024:
+              print(f"❌ ERROR: Description too long: {desc_len} chars")
+              sys.exit(1)
+
+          print(f"✅ Frontmatter valid ({desc_len} chars)")
+          EOF
+
+      - name: Check File Size
+        run: |
+          LINES=$(wc -l < SKILL.md)
+          WORDS=$(wc -w < SKILL.md)
+          echo "📊 SKILL.md: $LINES lines, $WORDS words"
+          if [ $LINES -gt 500 ]; then
+            echo "⚠️  WARNING: $LINES lines (guideline: <500)"
+          else
+            echo "✅ Size OK"
+          fi
+
+      - name: Validate plugin.json
+        run: |
+          python3 << 'EOF'
+          import json
+          import sys
+          import re
+
+          with open('.claude-plugin/plugin.json', 'r') as f:
+              plugin = json.load(f)
+
+          required = ['name', 'version', 'description', 'author', 'license']
+          missing = [f for f in required if f not in plugin]
+
+          if missing:
+              print(f"❌ ERROR: Missing fields: {missing}")
+              sys.exit(1)
+
+          version = plugin['version']
+          if not re.match(r'^\d+\.\d+\.\d+$', version):
+              print(f"❌ ERROR: Invalid version: {version}")
+              sys.exit(1)
+
+          print(f"✅ plugin.json valid (v{version})")
+          EOF
+
+      - name: Check for Broken Links
+        run: |
+          echo "🔍 Checking internal links..."
+          if grep -oP '\[.*?\]\(references/.*?\.md.*?\)' SKILL.md references/*.md 2>/dev/null | \
+             sed 's/.*(//' | sed 's/).*//' | sed 's/#.*//' | \
+             while read -r link; do
+               if [ ! -f "$link" ]; then
+                 echo "❌ ERROR: Broken link: $link"
+                 exit 1
+               fi
+             done
+          then
+            echo "✅ No broken links"
+          fi
+
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            SKILL.md
+            references/**/*.md
+            README.md
+            CONTRIBUTING.md
+        continue-on-error: true
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "## ✅ Validation Passed" >> $GITHUB_STEP_SUMMARY
+          echo "All skill validation checks passed." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://code.claude.com/schemas/plugin.json",
+  "name": "terraform-skill",
+  "version": "1.0.0",
+  "description": "Comprehensive Terraform and OpenTofu best practices skill covering testing, modules, CI/CD, and production patterns.",
+  "author": {
+    "name": "Anton Babenko",
+    "url": "https://github.com/antonbabenko"
+  },
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/antonbabenko/terraform-skill",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antonbabenko/terraform-skill"
+  },
+  "keywords": [
+    "terraform",
+    "opentofu",
+    "infrastructure-as-code",
+    "testing",
+    "modules",
+    "ci-cd",
+    "best-practices"
+  ]
+}

@@ -1,0 +1,82 @@
+name: Automated Release
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Create Automated Release
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout with full history for conventional commits analysis
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Bump version, generate changelog, tag, and commit
+      # This action handles:
+      # - Version calculation from conventional commits
+      # - CHANGELOG.md generation and update
+      # - Git tagging
+      # - Git commit and push
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          git-message: 'chore(release): {version}'
+          git-user-name: 'github-actions[bot]'
+          git-user-email: 'github-actions[bot]@users.noreply.github.com'
+          preset: 'angular'
+          tag-prefix: 'v'
+          output-file: 'CHANGELOG.md'
+          release-count: 0
+          version-file: './.claude-plugin/plugin.json'
+          version-path: 'version'
+          skip-on-empty: 'false'
+          skip-version-file: 'false'
+          skip-commit: 'false'
+
+      # 3. Create GitHub Release
+      # Only run if a new version was created
+      - name: Create GitHub Release
+        if: steps.changelog.outputs.skipped == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 4. Summary
+      - name: Release Summary
+        if: steps.changelog.outputs.skipped == 'false'
+        env:
+          VERSION: ${{ steps.changelog.outputs.version }}
+          TAG: ${{ steps.changelog.outputs.tag }}
+          CLEAN_CHANGELOG: ${{ steps.changelog.outputs.clean_changelog }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Tag:** $TAG" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Release:** https://github.com/$REPOSITORY/releases/tag/$TAG" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Changelog" >> $GITHUB_STEP_SUMMARY
+          echo "$CLEAN_CHANGELOG" >> $GITHUB_STEP_SUMMARY
