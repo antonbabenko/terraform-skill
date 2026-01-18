@@ -1,4 +1,13 @@
-# 1.0.0 (2026-01-18)
+# [1.1.0](https://github.com/antonbabenko/terraform-skill/compare/v1.0.0...v1.1.0) (2026-01-18)
+
+
+### Features
+
+* Added plugin install command to docs ([c400b18](https://github.com/antonbabenko/terraform-skill/commit/c400b184a6ef695a1dc7ebb38eff8adac2ea5874))
+
+
+
+# [1.0.0](https://github.com/antonbabenko/terraform-skill/compare/4f1a017efb63283fc4499dc5328505d4a7829671...v1.0.0) (2026-01-18)
 
 
 ### Bug Fixes
