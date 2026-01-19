@@ -1,10 +1,11 @@
-# [1.4.0](https://github.com/antonbabenko/terraform-skill/compare/v1.0.0...v1.4.0) (2026-01-19)
+# [1.5.0](https://github.com/antonbabenko/terraform-skill/compare/v1.0.0...v1.5.0) (2026-01-19)
 
 
 ### Bug Fixes
 
 * Allow optional frontmatter fields in SKILL.md validation ([e4393cb](https://github.com/antonbabenko/terraform-skill/commit/e4393cbf953a821e459cca8acf54601509505c23)), closes [#21146856119](https://github.com/antonbabenko/terraform-skill/issues/21146856119)
 * **changelog:** prevent regeneration from losing intermediate releases ([b81b57d](https://github.com/antonbabenko/terraform-skill/commit/b81b57d29b2f22aac457932360d335f5ba773758))
+* revert conventional-changelog-action to v5 due to tag detection bug ([9ba8215](https://github.com/antonbabenko/terraform-skill/commit/9ba821546f45ec7f7067686c870e0c284a53ea86))
 
 
 ### Features
