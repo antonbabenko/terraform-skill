@@ -18,13 +18,14 @@ This repository contains a **Claude Code skill** - executable documentation that
 terraform-skill/
 ├── .claude-plugin/
 │   └── marketplace.json                  # Marketplace and plugin metadata
-├── SKILL.md                              # Core skill file (~524 lines)
+├── SKILL.md                              # Core skill file (~645 lines)
 ├── references/                           # Reference files (progressive disclosure)
 │   ├── ci-cd-workflows.md                # CI/CD templates (~473 lines)
 │   ├── code-patterns.md                  # Code patterns & modern features (~859 lines)
 │   ├── module-patterns.md                # Module best practices (~1,126 lines)
-│   ├── quick-reference.md                # Command cheat sheets (~600 lines)
+│   ├── quick-reference.md                # Command cheat sheets (~800 lines)
 │   ├── security-compliance.md            # Security guidance (~470 lines)
+│   ├── state-management.md               # State management guide (~1,867 lines)
 │   └── testing-frameworks.md             # Testing guides (~563 lines)
 ├── README.md                             # For GitHub/marketplace users
 ├── CLAUDE.md                             # For contributors (YOU ARE HERE)
@@ -36,8 +37,8 @@ terraform-skill/
 | File | Audience | Purpose |
 |------|----------|---------|
 | `.claude-plugin/marketplace.json` | Claude Code | Marketplace and plugin metadata |
-| `SKILL.md` | Claude Code | Core skill (~524 lines, ~4.4K tokens) |
-| `references/*.md` | Claude Code | Reference files loaded on demand (6 files, ~26K tokens) |
+| `SKILL.md` | Claude Code | Core skill (~645 lines, ~5.4K tokens) |
+| `references/*.md` | Claude Code | Reference files loaded on demand (7 files, ~39K tokens) |
 | `README.md` | End users | Installation, usage examples, what it covers |
 | `CLAUDE.md` | Contributors | Development guidelines, architecture decisions |
 | `LICENSE` | Everyone | Apache 2.0 legal terms |
@@ -65,20 +66,21 @@ Response: Code following best practices
 ### Token Budget
 
 - **Metadata (YAML frontmatter):** ~100 tokens - always loaded
-- **Core SKILL.md:** ~4,400 tokens - loaded on activation
+- **Core SKILL.md:** ~5,400 tokens - loaded on activation
 - **Reference files:** Individual estimates (loaded on demand only):
   - ci-cd-workflows.md: ~2,300 tokens
   - code-patterns.md: ~5,100 tokens
   - module-patterns.md: ~7,000 tokens
-  - quick-reference.md: ~3,800 tokens
+  - quick-reference.md: ~5,000 tokens
   - security-compliance.md: ~2,500 tokens
+  - state-management.md: ~11,700 tokens
   - testing-frameworks.md: ~3,400 tokens
-- **Target:** Aim for under 500 lines for main SKILL.md (current: 524 lines - comprehensive core guidance)
+- **Target:** Aim for under 500 lines for main SKILL.md (current: 645 lines - includes essential state management summary)
 
 **Our Architecture:**
-- SKILL.md: 524 lines, ~4.4K tokens (comprehensive core guidance)
-- Reference files: 6 files totaling 4,091 lines, ~26K tokens
-- Progressive disclosure: ~56-70% token reduction for typical queries (vs loading all content)
+- SKILL.md: 645 lines, ~5.4K tokens (comprehensive core guidance with state management)
+- Reference files: 7 files totaling 6,158 lines, ~39K tokens
+- Progressive disclosure: ~50-65% token reduction for typical queries (vs loading all content)
 
 ## Content Philosophy
 
@@ -316,15 +318,16 @@ As Terraform evolves, balance:
 - **Detail** vs **Scannability**
 - **Examples** vs **Reference**
 
-**Current Status:** SKILL.md is at 524 lines, slightly above the suggested 500-line target. This is justified by:
-- Comprehensive decision matrices (testing, count vs for_each)
+**Current Status:** SKILL.md is at 645 lines, above the suggested 500-line target. This is justified by:
+- Comprehensive decision matrices (testing, count vs for_each, state organization)
 - Essential quick reference tables
+- State management fundamentals (critical gap filled)
 - Version-specific guidance (multiple Terraform versions)
 - Progressive disclosure architecture minimizes token cost
 
-The extra 24 lines provide significant value while maintaining scannability. Future updates should prioritize reference file expansion over core skill growth.
+The additional content provides significant value, particularly the state management section which addresses one of the most critical aspects of Terraform usage. Future updates should prioritize reference file expansion over core skill growth.
 
-Current sweet spot: ~4.4K tokens for core SKILL.md, with 6 reference files (~26K tokens) providing deep-dive content on demand. Total coverage: ~30.4K tokens structured for progressive disclosure.
+Current sweet spot: ~5.4K tokens for core SKILL.md, with 7 reference files (~39K tokens) providing deep-dive content on demand. Total coverage: ~44.4K tokens structured for progressive disclosure.
 
 ### Long-term Vision
 
