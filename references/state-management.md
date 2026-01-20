@@ -97,15 +97,16 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
   restrict_public_buckets = true
 }
 
-# Enable MFA Delete for production
-resource "aws_s3_bucket_mfa_delete" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  versioning_configuration {
-    mfa_delete = "Enabled"  # Requires MFA to delete versions
-  }
-}
-
+# MFA Delete for production
+# Note: Terraform cannot enable S3 MFA Delete. This must be configured
+# outside of Terraform using the AWS CLI or an SDK with the root account.
+#
+# Example (run once, after bucket creation and versioning are enabled):
+#
+# aws s3api put-bucket-versioning \
+#   --bucket my-terraform-state \
+#   --versioning-configuration Status=Enabled,MFADelete=Enabled \
+#   --mfa "arn-of-mfa-device mfa-code"
 # DynamoDB table for state locking
 resource "aws_dynamodb_table" "terraform_state_lock" {
   name         = "terraform-state-lock"
