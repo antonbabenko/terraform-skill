@@ -480,26 +480,11 @@ git commit -m "Force-unlocked state after CI job termination"
 
 ### Automatic Lock Timeout
 
-**Terraform Cloud supports lock timeout:**
+**Terraform Cloud lock timeout:**
 
-```hcl
-terraform {
-  cloud {
-    organization = "my-org"
-    
-    workspaces {
-      name = "prod-infrastructure"
-    }
-  }
-  
-  # Lock timeout (Terraform Cloud only)
-  backend_config {
-    lock_timeout = "5m"
-  }
-}
-```
+Lock timeout in Terraform Cloud is configured through workspace settings in the Terraform Cloud UI under "General Settings" → "Remote Operations" → "Lock Timeout". It cannot be configured through the `cloud` block in Terraform code.
 
-**For other backends, implement in automation:**
+**For other backends, implement timeout in automation:**
 
 ```bash
 #!/bin/bash
@@ -1021,18 +1006,9 @@ terraform state mv \
 
 **Scenario:** Splitting state into separate files
 
-```bash
-# In source state
-terraform state pull > state-backup.json
-terraform state mv aws_rds_cluster.main /tmp/exported-rds.tfstate
-terraform state push state-backup.json  # If needed to rollback
+**Note:** `terraform state mv` only works within the same state file. To move resources between different state files, use the approach below.
 
-# In destination state
-cd ../other-terraform-root
-terraform state push /tmp/exported-rds.tfstate
-```
-
-**Better approach: Use `terraform state rm` and `import`**
+**Recommended approach: Use `terraform state rm` and `import`**
 
 ```bash
 # In source state - remove resource
@@ -1473,19 +1449,9 @@ terraform force-unlock LOCK_ID
 # Confirm when prompted
 ```
 
-**Prevent future issues:**
+**Prevent future issues in CI/CD:**
 
-```bash
-# Use trap to cleanup on exit
-#!/bin/bash
-cleanup() {
-  echo "Cleaning up on exit..."
-  terraform force-unlock LOCK_ID 2>/dev/null || true
-}
-trap cleanup EXIT
-
-terraform apply
-```
+Use concurrency controls instead of automatic force-unlock (see CI/CD section below).
 
 #### Issue: Cannot Acquire Lock in CI/CD
 
@@ -1509,15 +1475,19 @@ jobs:
 
 **Solution 2: Separate state per branch/PR**
 
-```hcl
-# backend.tf
+```bash
+# backend.tf (partial configuration - key provided dynamically)
 terraform {
   backend "s3" {
     bucket = "my-terraform-state"
-    key    = "pr-${env.GITHUB_PR_NUMBER}/terraform.tfstate"
     region = "us-east-1"
+    # Note: Backend configuration does not support interpolation or env vars.
+    # Set the key dynamically during init in CI/CD:
   }
 }
+
+# In CI/CD workflow (e.g., GitHub Actions):
+# terraform init -backend-config="key=pr-${GITHUB_PR_NUMBER}/terraform.tfstate"
 ```
 
 ### State Refresh and Reconciliation
