@@ -51,7 +51,7 @@ terraform {
     key          = "prod/vpc/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
-    use_lockfile = true  # Native S3 locking (Terraform 1.11+)
+    use_lock_file = true  # Native S3 locking (Terraform 1.11+)
     
     # Optional but recommended
     kms_key_id = "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
@@ -91,7 +91,7 @@ terraform {
 - Existing infrastructure already using DynamoDB
 - Need DynamoDB for other purposes
 
-**Migration note:** Existing setups using DynamoDB will continue to work. The `use_lockfile` option is opt-in.
+**Migration note:** Existing setups using DynamoDB will continue to work. The `use_lock_file` option is opt-in.
 
 **Backend infrastructure setup (Terraform 1.11+ with lock-file):**
 
@@ -455,7 +455,7 @@ terraform {
     key          = "prod/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
-    use_lockfile = true  # Enable native S3 locking
+    use_lock_file = true  # Enable native S3 locking
   }
 }
 ```
@@ -466,7 +466,7 @@ terraform {
 - ✅ Unified management (state + locks in one bucket)
 - ✅ Better compliance (Object Lock modes)
 
-**Migration from DynamoDB:** Simply add `use_lockfile = true` and remove `dynamodb_table`. Both can coexist during migration.
+**Migration from DynamoDB:** Simply add `use_lock_file = true` and remove `dynamodb_table`. Both can coexist during migration.
 
 ### DynamoDB Locking for S3 (Pre-1.11 or Legacy)
 

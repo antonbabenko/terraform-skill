@@ -421,7 +421,7 @@ terraform {
     key          = "prod/vpc/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
-    use_lockfile = true  # Native S3 locking
+    use_lock_file = true  # Native S3 locking
   }
 }
 ```
