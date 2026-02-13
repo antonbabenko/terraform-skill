@@ -155,6 +155,7 @@ resource "aws_security_group" "web" {
 ### Success Criteria
 - [ ] Agent flags public S3 bucket as security risk
 - [ ] Agent flags wide-open security group
+- [ ] Agent flags inline `ingress`/`egress` blocks (should use separate rule resources)
 - [ ] Agent recommends security scanning tools (trivy/checkov)
 - [ ] Agent provides secure alternatives
 - [ ] Agent doesn't stop at "syntax correct"
