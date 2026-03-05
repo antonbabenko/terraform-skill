@@ -1,4 +1,6 @@
-# CLAUDE.md - Contributor Guide
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > **For End Users:** See [README.md](README.md) for installation and usage.
 >
@@ -6,340 +8,135 @@
 
 ## What This Is
 
-This repository contains a **Claude Code skill** - executable documentation that Claude loads to provide Terraform/OpenTofu expertise. Think of it as:
-
-- **Prompt engineering as infrastructure**: Version-controlled AI instructions
-- **Domain knowledge artifact**: Encoding terraform-best-practices.com into Claude's context
-- **Meta-project**: Building instructions for an AI assistant
+A **Claude Code skill** - executable documentation that Claude loads to provide Terraform/OpenTofu expertise. It encodes terraform-best-practices.com patterns into Claude's context as version-controlled AI instructions.
 
 ## Repository Structure
 
 ```
 terraform-skill/
-├── .claude-plugin/
-│   └── marketplace.json                  # Marketplace and plugin metadata
-├── SKILL.md                              # Core skill file (~524 lines)
-├── references/                           # Reference files (progressive disclosure)
-│   ├── ci-cd-workflows.md                # CI/CD templates (~473 lines)
-│   ├── code-patterns.md                  # Code patterns & modern features (~859 lines)
-│   ├── module-patterns.md                # Module best practices (~1,126 lines)
-│   ├── quick-reference.md                # Command cheat sheets (~600 lines)
-│   ├── security-compliance.md            # Security guidance (~470 lines)
-│   └── testing-frameworks.md             # Testing guides (~563 lines)
-├── README.md                             # For GitHub/marketplace users
-├── CLAUDE.md                             # For contributors (YOU ARE HERE)
-└── LICENSE                               # Apache 2.0
-```
-
-### File Roles
-
-| File | Audience | Purpose |
-|------|----------|---------|
-| `.claude-plugin/marketplace.json` | Claude Code | Marketplace and plugin metadata |
-| `SKILL.md` | Claude Code | Core skill (~524 lines, ~4.4K tokens) |
-| `references/*.md` | Claude Code | Reference files loaded on demand (6 files, ~26K tokens) |
-| `README.md` | End users | Installation, usage examples, what it covers |
-| `CLAUDE.md` | Contributors | Development guidelines, architecture decisions |
-| `LICENSE` | Everyone | Apache 2.0 legal terms |
-
-## How Claude Skills Work
-
-### Progressive Disclosure
-
-```
-User: "Create a Terraform module with tests"
-       ↓
-Claude: Scans skill metadata (~100 tokens)
-       ↓
-Claude: "This matches terraform-skill activation triggers"
-       ↓
-Claude: Loads full SKILL.md (~4,400 tokens)
-       ↓
-Claude: Applies testing framework decision matrix
-       ↓
-Response: Code following best practices
-```
-
-**Key Insight:** Skills only load when relevant, minimizing token usage.
-
-### Token Budget
-
-- **Metadata (YAML frontmatter):** ~100 tokens - always loaded
-- **Core SKILL.md:** ~4,400 tokens - loaded on activation
-- **Reference files:** Individual estimates (loaded on demand only):
-  - ci-cd-workflows.md: ~2,300 tokens
-  - code-patterns.md: ~5,100 tokens
-  - module-patterns.md: ~7,000 tokens
-  - quick-reference.md: ~3,800 tokens
-  - security-compliance.md: ~2,500 tokens
-  - testing-frameworks.md: ~3,400 tokens
-- **Target:** Aim for under 500 lines for main SKILL.md (current: 524 lines - comprehensive core guidance)
-
-**Our Architecture:**
-- SKILL.md: 524 lines, ~4.4K tokens (comprehensive core guidance)
-- Reference files: 6 files totaling 4,091 lines, ~26K tokens
-- Progressive disclosure: ~56-70% token reduction for typical queries (vs loading all content)
-
-## Content Philosophy
-
-### What Belongs in SKILL.md
-
-✅ **Include:**
-- Terraform-specific patterns and idioms
-- Decision frameworks (when to use X vs Y)
-- Version-specific features (Terraform 1.6+, 1.9+, etc.)
-- Testing strategy workflows
-- ✅ DO vs ❌ DON'T examples
-- Quick reference tables and decision matrices
-
-✅ **Keep:**
-- Scannable format (tables, headers, visual hierarchy)
-- Imperative voice ("Use X", not "You should consider X")
-- Concrete examples with inline comments
-- Version requirements clearly marked
-
-### What Doesn't Belong
-
-❌ **Exclude:**
-- Generic programming advice
-- Terraform syntax basics (covered in official docs)
-- Provider-specific resource details (use MCP tools)
-- Obvious practices ("use version control")
-- Long prose explanations (use tables instead)
-
-## Content Structure
-
-SKILL.md is organized by workflow phase:
-
-1. **When to Use This Skill** - Activation triggers for Claude
-2. **Core Principles** - Naming, structure, philosophy
-3. **Testing Strategy Framework** - Decision matrices
-4. **Module Development** - Best practices and patterns
-5. **Common Patterns** - ✅/❌ side-by-side examples
-6. **CI/CD Integration** - Workflow automation
-7. **Quick Reference** - Rapid consultation tables
-8. **License & Attribution** - Legal and source credits
-
-Each section is self-contained for selective reading.
-
-## Writing Style Guide
-
-### Imperative Voice
-
-✅ **Good:**
-```markdown
-Use underscores in variable names, not hyphens:
-
-✅ DO: `variable "vpc_id" {}`
-❌ DON'T: `variable "vpc-id" {}`
-```
-
-❌ **Bad:**
-```markdown
-You should consider using underscores instead of hyphens
-in your variable names, as this is generally preferred.
-```
-
-### Scannable Format
-
-Use:
-- **Tables** for comparisons and decision matrices
-- **Code blocks** with inline comments
-- **Headers** for clear section breaks
-- **Bullets** for lists, not paragraphs
-- **✅/❌** for visual clarity
-
-### Version Requirements
-
-Always mark version-specific features:
-
-```markdown
-**Native Tests** (Terraform 1.6+, OpenTofu 1.7+)
+├── .claude-plugin/marketplace.json  # Plugin metadata (version synced automatically)
+├── skills/
+│   └── terraform-skill/             # Skill autodiscovered by Claude Code plugin system
+│       ├── SKILL.md                 # Core skill file (~524 lines, ~4.4K tokens)
+│       └── references/              # Reference files loaded on demand (~26K tokens total)
+│           ├── ci-cd-workflows.md
+│           ├── code-patterns.md
+│           ├── module-patterns.md
+│           ├── quick-reference.md
+│           ├── security-compliance.md
+│           └── testing-frameworks.md
+├── tests/                           # Baseline scenarios and rationalization tracking
+│   ├── baseline-scenarios.md
+│   ├── compliance-verification.md
+│   └── rationalization-table.md
+└── .github/workflows/
+    ├── validate.yml                 # PR validation (frontmatter, size, links, lint)
+    └── automated-release.yml        # Auto-release on master push via conventional commits
 ```
 
 ## Development Workflow
 
-### This Is Not Traditional Software
+**This is documentation, not code.** There is no build step, no test suite to run, no compilation.
 
-**No build/test/compile:**
-- It's documentation, not code
-- No automated test suite
-- No build artifacts
+### Validation
 
-**Validation approach:**
-1. Update SKILL.md
-2. Load in Claude Code (reload skills)
-3. Test on real Terraform projects
-4. Observe if Claude applies patterns correctly
-5. Iterate based on results
-
-### Testing Your Changes
-
-**Before submitting a PR:**
-
-1. **Load the updated skill:**
-   ```bash
-   # If you have local clone in ~/.claude/references/
-   # Claude Code auto-reloads on file changes
-   ```
-
-2. **Test with real queries:**
-   - "Create a Terraform module with tests"
-   - "Review this configuration"
-   - "What testing framework should I use?"
-
-3. **Verify Claude references the skill:**
-   - Check if new patterns appear in responses
-   - Ensure no conflicts with existing guidance
-
-4. **Check token count:**
-   ```bash
-   wc -c SKILL.md  # Currently ~17,700 chars ≈ 4,400 tokens
-   ```
-
-### When to Update
-
-**Update the skill when:**
-- ✅ New Terraform major/minor versions introduce features
-- ✅ Community consensus emerges on patterns
-- ✅ Real-world usage reveals gaps or ambiguities
-- ✅ Anti-patterns discovered that should be warned against
-
-**Don't update for:**
-- ❌ Provider-specific resource changes (use MCP tools)
-- ❌ Minor version patches without feature changes
-- ❌ Personal preferences without community consensus
-
-## Working with MCP Tools
-
-When this skill is used alongside Terraform MCP server:
-
-| Provides | Skill | MCP |
-|----------|-------|-----|
-| Best practices | ✅ | ❌ |
-| Code patterns | ✅ | ❌ |
-| Testing workflows | ✅ | ❌ |
-| Latest versions | ❌ | ✅ |
-| Registry docs | ❌ | ✅ |
-| Module search | ❌ | ✅ |
-
-**Together they enable:**
-- Code generation following best practices
-- Up-to-date version constraints
-- Framework selection guidance
-- Proactive anti-pattern detection
-
-## Quality Standards
-
-### Content Quality Checklist
-
-Before merging changes:
-
-- [ ] Decision frameworks are clear
-- [ ] Examples are accurate and tested
-- [ ] No outdated information
-- [ ] Version-specific guidance marked
-- [ ] Common pitfalls documented
-- [ ] ✅/❌ examples for non-obvious patterns
-
-### Technical Quality
-
-- [ ] Code examples are syntactically correct
-- [ ] Commands follow current best practices
-- [ ] Links to official documentation work
-- [ ] Tools referenced are current (not deprecated)
-
-### Usability
-
-- [ ] Clear activation triggers
-- [ ] Quick reference sections scannable
-- [ ] Logical organization maintained
-- [ ] Consistent formatting (markdown standards)
-
-### Legal
-
-- [ ] License clearly stated (Apache 2.0)
-- [ ] Sources attributed
-- [ ] Copyright notice current
-- [ ] No copyrighted content without permission
-
-## Contributing Process
-
-### 1. Fork & Branch
+CI runs automatically on PRs touching `SKILL.md`, `references/**/*.md`, or `.claude-plugin/**`. To check locally:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/terraform-skill
-cd terraform-skill
-git checkout -b feature/your-improvement
+# Check SKILL.md line count (guideline: <500 lines)
+wc -l skills/terraform-skill/SKILL.md
+
+# Validate YAML frontmatter (requires pyyaml)
+python3 -c "
+import yaml, sys
+content = open('skills/terraform-skill/SKILL.md').read()
+parts = content.split('---', 2)
+fm = yaml.safe_load(parts[1])
+required = {'name', 'description'}
+missing = required - set(fm.keys())
+print('Missing:', missing) if missing else print('Frontmatter OK')
+"
+
+# Check for broken internal links (run from the skill directory)
+cd skills/terraform-skill
+grep -oP '\[.*?\]\(references/.*?\.md.*?\)' SKILL.md references/*.md | \
+  sed 's/.*(//' | sed 's/).*//' | sed 's/#.*//' | \
+  while read -r link; do [ ! -f "$link" ] && echo "Broken: $link"; done
 ```
 
-### 2. Make Changes
+### Testing Changes
 
-Edit `SKILL.md` following the guidelines above.
+No automated test suite. The validation approach is:
+1. Edit `SKILL.md` or a `references/*.md` file
+2. Load the skill in Claude Code (reload skills)
+3. Test with real Terraform queries (e.g., "Create a Terraform module with tests")
+4. Verify Claude applies the new patterns correctly
+5. Check `tests/baseline-scenarios.md` for regression scenarios
 
-### 3. Test Locally
+## Commit Conventions & Releases
 
-```bash
-# Copy to Claude skills directory for testing
-cp -r . ~/.claude/references/terraform-skill/
+Releases are **fully automated** from conventional commits on `master`:
 
-# Test in Claude Code with real queries
-```
+| Commit prefix | Version bump |
+|---------------|-------------|
+| `feat!:` or `BREAKING CHANGE:` | Major |
+| `feat:` | Minor |
+| `fix:` | Patch |
+| Other | Patch (default) |
 
-### 4. Submit PR
+The release workflow automatically:
+- Bumps the version in `CHANGELOG.md`
+- Syncs versions across **three places** (must stay in sync):
+  1. `.claude-plugin/marketplace.json` → `version` (root)
+  2. `.claude-plugin/marketplace.json` → `plugins[0].version`
+  3. `skills/terraform-skill/SKILL.md` YAML frontmatter → `metadata.version`
 
-```bash
-git add SKILL.md
-git commit -m "Add guidance for Terraform 1.10 feature X"
-git push origin feature/your-improvement
-```
+**Never manually edit version numbers** - the CI handles this.
 
-Create PR with:
-- Clear description of what changed
-- Why the change improves the skill
-- How you tested it
+## SKILL.md Architecture
 
-### 5. Review Process
+### Plugin Structure
 
-Maintainers will check:
-- Content accuracy
-- Token efficiency
-- Consistency with existing patterns
-- Real-world testing results
+The skill is located at `skills/terraform-skill/SKILL.md`. Claude Code's plugin system autodiscovers skills in the `skills/<name>/SKILL.md` pattern per the [plugins reference](https://code.claude.com/docs/en/plugins-reference). Reference files live alongside the skill at `skills/terraform-skill/references/`, keeping relative paths intact.
 
-## Skill Evolution Strategy
+### YAML Frontmatter (required fields)
 
-### Maintaining Balance
-
-As Terraform evolves, balance:
-- **Completeness** vs **Token efficiency**
-- **Detail** vs **Scannability**
-- **Examples** vs **Reference**
-
-**Current Status:** SKILL.md is at 524 lines, slightly above the suggested 500-line target. This is justified by:
-- Comprehensive decision matrices (testing, count vs for_each)
-- Essential quick reference tables
-- Version-specific guidance (multiple Terraform versions)
-- Progressive disclosure architecture minimizes token cost
-
-The extra 24 lines provide significant value while maintaining scannability. Future updates should prioritize reference file expansion over core skill growth.
-
-Current sweet spot: ~4.4K tokens for core SKILL.md, with 6 reference files (~26K tokens) providing deep-dive content on demand. Total coverage: ~30.4K tokens structured for progressive disclosure.
-
-### Long-term Vision
-
-This skill should:
-- Stay current with Terraform/OpenTofu releases
-- Remain the definitive Claude resource for Terraform
-- Evolve with community consensus
-- Maintain production-grade quality standards
-
-## Questions?
-
-- **Issues:** [GitHub Issues](https://github.com/antonbabenko/terraform-skill/issues)
-- **Discussions:** Use GitHub Discussions for questions
-- **Author:** [@antonbabenko](https://github.com/antonbabenko)
-
+```yaml
 ---
+name: terraform-skill          # letters, numbers, hyphens only
+description: Use when...       # < 1024 chars, starts with "Use when"
+license: Apache-2.0
+metadata:
+  author: Anton Babenko
+  version: X.Y.Z               # Auto-synced by CI
+---
+```
 
-**Remember:** You're not just editing docs - you're shaping how Claude understands and applies Terraform best practices. Quality matters.
+### Progressive Disclosure Pattern
+
+SKILL.md is the entry point (~4.4K tokens). Reference files provide depth on demand. Cross-links use relative paths: `[Testing Guide](references/testing-frameworks.md)`.
+
+When adding content, ask: **Does this belong in SKILL.md (decision frameworks, key patterns) or a reference file (detailed examples, templates)?**
+
+### Content Standards
+
+- **Imperative voice:** "Use X" not "You should consider X"
+- **Scannable format:** tables > bullets > prose
+- **✅ DO / ❌ DON'T** side-by-side for non-obvious patterns
+- **Version-specific features** clearly marked (e.g., `Terraform 1.6+`)
+- **Token budget:** SKILL.md target <500 lines; current 524 is justified but don't grow further
+
+## PR Requirements
+
+PRs must include testing evidence showing baseline behavior (before) vs. compliance behavior (after) for affected scenarios from `tests/baseline-scenarios.md`. See `.github/PULL_REQUEST_TEMPLATE.md` for the full checklist.
+
+## What Belongs Where
+
+| Content type | Location |
+|-------------|----------|
+| Decision frameworks, core patterns | `SKILL.md` |
+| Detailed guides, templates, examples | `references/*.md` |
+| Baseline test scenarios | `tests/baseline-scenarios.md` |
+| Agent rationalization tracking | `tests/rationalization-table.md` |
+| Installation/usage docs | `README.md` |
+| Contributor process details | `CONTRIBUTING.md` |

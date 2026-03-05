@@ -3,14 +3,12 @@ name: Validate Skill
 on:
   pull_request:
     paths:
-      - 'SKILL.md'
-      - 'references/**/*.md'
+      - 'skills/**'
       - '.claude-plugin/**'
   push:
     branches: [master, main]
     paths:
-      - 'SKILL.md'
-      - 'references/**/*.md'
+      - 'skills/**'
       - '.claude-plugin/**'
   workflow_dispatch:
 
@@ -40,7 +38,7 @@ jobs:
 
           print("🔍 Validating SKILL.md frontmatter...")
 
-          with open('SKILL.md', 'r') as f:
+          with open('skills/terraform-skill/SKILL.md', 'r') as f:
               content = f.read()
 
           if not content.startswith('---'):
@@ -93,8 +91,8 @@ jobs:
 
       - name: Check File Size
         run: |
-          LINES=$(wc -l < SKILL.md)
-          WORDS=$(wc -w < SKILL.md)
+          LINES=$(wc -l < skills/terraform-skill/SKILL.md)
+          WORDS=$(wc -w < skills/terraform-skill/SKILL.md)
           echo "📊 SKILL.md: $LINES lines, $WORDS words"
           if [ $LINES -gt 500 ]; then
             echo "⚠️  WARNING: $LINES lines (guideline: <500)"
@@ -153,6 +151,7 @@ jobs:
       - name: Check for Broken Links
         run: |
           echo "🔍 Checking internal links..."
+          cd skills/terraform-skill
           if grep -oP '\[.*?\]\(references/.*?\.md.*?\)' SKILL.md references/*.md 2>/dev/null | \
              sed 's/.*(//' | sed 's/).*//' | sed 's/#.*//' | \
              while read -r link; do
@@ -169,8 +168,7 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v16
         with:
           globs: |
-            SKILL.md
-            references/**/*.md
+            skills/**/*.md
             README.md
             CONTRIBUTING.md
         continue-on-error: true

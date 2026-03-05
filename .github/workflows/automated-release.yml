@@ -65,7 +65,7 @@ jobs:
 
           def update_skill_version(version):
               """Update version in SKILL.md YAML frontmatter."""
-              skill_path = 'SKILL.md'
+              skill_path = 'skills/terraform-skill/SKILL.md'
 
               if not os.path.exists(skill_path):
                   raise FileNotFoundError(f"{skill_path} not found")
@@ -133,7 +133,7 @@ jobs:
           # Commit the sync
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/marketplace.json SKILL.md
+          git add .claude-plugin/marketplace.json skills/terraform-skill/SKILL.md
           git commit --amend --no-edit
           git push --force-with-lease
 
