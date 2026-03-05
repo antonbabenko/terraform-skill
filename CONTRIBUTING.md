@@ -93,19 +93,21 @@ description: Comprehensive skill for Terraform development covering testing, mod
 
 ```
 terraform-skill/
-├── SKILL.md                    # Core skill (<500 lines guideline)
-├── references/                     # Reference files (progressive disclosure)
-│   ├── testing-frameworks.md
-│   ├── module-patterns.md
-│   ├── ci-cd-workflows.md
-│   ├── security-compliance.md
-│   └── quick-reference.md
-├── tests/                      # TDD testing framework
+├── skills/
+│   └── terraform-skill/            # Autodiscovered by Claude Code plugin system
+│       ├── SKILL.md                # Core skill (<500 lines guideline)
+│       └── references/             # Reference files (progressive disclosure)
+│           ├── testing-frameworks.md
+│           ├── module-patterns.md
+│           ├── ci-cd-workflows.md
+│           ├── security-compliance.md
+│           └── quick-reference.md
+├── tests/                          # TDD testing framework
 │   ├── baseline-scenarios.md
 │   ├── compliance-verification.md
 │   └── rationalization-table.md
-└── .github/workflows/          # Automation
-    ├── release.yml
+└── .github/workflows/              # Automation
+    ├── automated-release.yml
     └── validate.yml
 ```
 
@@ -143,7 +145,7 @@ Review `tests/baseline-scenarios.md`. Which scenarios does your change affect?
 
 ```bash
 # Disable skill temporarily
-mv ~/.claude/references/terraform-skill ~/.claude/references/terraform-skill.disabled
+/plugin disable terraform-skill@antonbabenko
 
 # Run affected scenario
 # Document agent response in tests/baseline-results/
@@ -157,7 +159,7 @@ Make your edits to SKILL.md or reference files.
 
 ```bash
 # Re-enable skill
-mv ~/.claude/references/terraform-skill.disabled ~/.claude/references/terraform-skill
+/plugin enable terraform-skill@antonbabenko
 
 # Run same scenario
 # Document improved behavior in tests/compliance-results/
