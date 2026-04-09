@@ -46,6 +46,15 @@ This plugin is distributed via Claude Code marketplace using `.claude-plugin/mar
 /plugin install terraform-skill@antonbabenko
 ```
 
+### Any AI Host (via agent-add)
+
+```bash
+npx -y agent-add --skill 'https://github.com/antonbabenko/terraform-skill'
+```
+
+Supports Claude Code, Cursor, Windsurf, and [15+ more hosts](https://github.com/pea3nut/agent-get). Requires [Node.js](https://nodejs.org/) 18+.
+
+
 ### Manual Installation
 
 ```bash
