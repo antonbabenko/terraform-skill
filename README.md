@@ -2,42 +2,50 @@
 
 [![Claude Skill](https://img.shields.io/badge/Claude-Skill-5865F2)](https://docs.claude.ai/docs/agent-skills)
 [![Terraform](https://img.shields.io/badge/Terraform-1.0+-623CE4)](https://www.terraform.io/)
-[![OpenTofu](https://img.shields.io/badge/OpenTofu-1.6+-FFD814)](https://opentofu.org/)
+[![OpenTofu](https://img.shields.io/badge/OpenTofu-1.6+-FFD714)](https://opentofu.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 Comprehensive Terraform and OpenTofu best practices skill for Claude Code. Get instant guidance on testing strategies, module patterns, CI/CD workflows, and production-ready infrastructure code.
 
 ## What This Skill Provides
 
-🧪 **Testing Frameworks**
+ð§ª **Testing Frameworks**
 - Decision matrix for choosing between native tests and Terratest
-- Testing strategy workflows (static → integration → E2E)
+- Testing strategy workflows (static â integration â E2E)
 - Real-world examples and patterns
 
-📦 **Module Development**
+ð¦ **Module Development**
 - Structure and naming conventions
 - Versioning strategies
 - Public vs private module patterns
 
-🔄 **CI/CD Integration**
+ð **CI/CD Integration**
 - GitHub Actions workflows
 - GitLab CI examples
 - Cost optimization patterns
 - Compliance automation
 
-🔒 **Security & Compliance**
+ð **Security & Compliance**
 - Trivy, Checkov integration
 - Policy-as-code patterns
 - Compliance scanning workflows
 
-📋 **Quick Reference**
+ð **Quick Reference**
 - Decision flowcharts
-- Common patterns (✅ DO vs ❌ DON'T)
+- Common patterns (â DO vs â DON'T)
 - Cheat sheets for rapid consultation
 
 ## Installation
 
-This plugin is distributed via Claude Code marketplace using `.claude-plugin/marketplace.json`.
+### Cross-host install via agent-add
+
+Install to any supported AI host (Claude Code, Cursor, Windsurf, and [15+ more](https://github.com/pea3nut/agent-get)) with one command:
+
+```bash
+npx -y agent-add --skill https://github.com/antonbabenko/terraform-skill.git
+```
+
+> Requires [Node.js](https://nodejs.org/) 18+. `agent-add` auto-detects your AI host and copies the skill to the correct directory.
 
 ### Claude Code (Recommended)
 
@@ -122,7 +130,7 @@ Decision matrices for:
 
 ### Common Patterns & Anti-patterns
 
-Side-by-side ✅ DO vs ❌ DON'T examples for:
+Side-by-side â DO vs â DON'T examples for:
 - Variable naming
 - Resource naming
 - Module composition
@@ -169,10 +177,10 @@ Releases are automated based on conventional commits in commit messages:
 
 | Commit Type | Version Bump | Example |
 |-------------|--------------|---------|
-| `feat!:` or `BREAKING CHANGE:` | Major | 1.2.3 → 2.0.0 |
-| `feat:` | Minor | 1.2.3 → 1.3.0 |
-| `fix:` | Patch | 1.2.3 → 1.2.4 |
-| Other commits | Patch (default) | 1.2.3 → 1.2.4 |
+| `feat!:` or `BREAKING CHANGE:` | Major | 1.2.3 â 2.0.0 |
+| `feat:` | Minor | 1.2.3 â 1.3.0 |
+| `fix:` | Patch | 1.2.3 â 1.2.4 |
+| Other commits | Patch (default) | 1.2.3 â 1.2.4 |
 
 Releases are created automatically when changes are pushed to master.
 
