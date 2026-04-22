@@ -329,19 +329,20 @@ moved {
 
 ### `for_each` keys must be known at plan time
 
-`for_each` (0.12+) requires its key set to be resolvable during plan. Deriving keys from another resource's computed attributes fails with `Invalid for_each argument` — the attribute is unknown until apply. `depends_on` does NOT fix this; the dependency is about ordering, not about making values known earlier.
+`for_each` (0.12+) requires its key set resolvable during plan.
+
+| Case | Use | Why |
+|------|-----|-----|
+| stable key set known at plan | `for_each` over static map/var | avoids count index churn on insert/remove |
+| key set unknowable at plan | `count = bool ? 1 : 0` for singleton | keys cannot be resolved at plan time |
+
+- ❌ `depends_on` does NOT fix `Invalid for_each argument` — it orders applies, not plan-time value resolution
+- ❌ deriving `for_each` keys from another resource's computed attrs (IDs, ARNs)
+- ✅ drive `for_each` from user-supplied variables or static locals
 
 ```hcl
 # ❌ BAD - keys derived from computed IDs; plan fails
-resource "aws_instance" "web" {
-  count         = 3
-  ami           = "ami-0123"
-  instance_type = "t3.micro"
-}
-
 resource "aws_eip" "web" {
-  # Plan error: The "for_each" map includes keys derived from resource
-  # attributes that cannot be determined until apply.
   for_each = toset([for i in aws_instance.web : i.id])
   instance = each.key
 }
@@ -358,16 +359,14 @@ resource "aws_instance" "web" {
 }
 
 resource "aws_eip" "web" {
-  for_each = var.instances  # same static key set
+  for_each = var.instances
   instance = aws_instance.web[each.key].id
 }
 
-# ✅ GOOD - when keys are genuinely unknowable at plan, use count for
-# optional singleton behavior and document why
+# ✅ GOOD - singleton when exact ID not known at plan
 resource "aws_eip" "bastion" {
   count    = var.create_bastion ? 1 : 0
   instance = aws_instance.bastion[0].id
-  # count used intentionally: exact instance ID not known at plan time
 }
 ```
 
@@ -501,11 +500,9 @@ moved {
 
 ### ignore_changes (Lifecycle Escape Hatch)
 
-`ignore_changes` (0.12+) silences drift on specific attributes so Terraform stops fighting an external controller. NEVER emit `ignore_changes = all` — it turns every attribute into an unmanaged black box and hides real drift. Prefer attribute-level entries with a justification comment naming the external system.
-
-**Allowed narrow cases:** out-of-band autoscaling (`desired_count`), provider-computed timestamps, third-party-managed tags.
-
-**Forbidden:** silencing legitimate drift to "make plans quiet". If a plan shows unexpected diff, diagnose the root cause; do not mute it.
+- ✅ attribute-level `ignore_changes = [tags["X"]]` with a comment naming the external system
+- ❌ `ignore_changes = all` — hides real drift, turns every attribute unmanaged
+- ❌ use `ignore_changes` to silence noisy plans instead of diagnosing root cause
 
 ```hcl
 # ❌ BAD - blanket ignore hides all drift
@@ -595,8 +592,6 @@ Four mechanisms look similar and are routinely confused. Only three actually gat
 | `postcondition` (in `lifecycle`) | after apply | the resource's own computed attrs | yes |
 | `check` block (1.5+) | every plan + apply | anything | **NO — advisory only, warnings not errors** |
 
-A common LLM mistake is to rely on `check` blocks to gate apply. `check` emits warnings but never fails the run. For anything that must block, use `validation`, `precondition`, or `postcondition` depending on what the condition needs to reference.
-
 ### Write-Only Arguments (Terraform 1.11+)
 
 **Always use write-only arguments or external secret management.** A common LLM mistake is to mark a variable `sensitive = true` and assume the value is kept out of state — it is not. `sensitive` only masks display; write-only arguments (or external secret lookups at runtime) are what actually keep material out of state. Verify on 1.11+: prefer `*_wo` arguments for credentials; on older runtimes, source secrets from a secret manager and never store them in variables or tfvars.
@@ -635,13 +630,13 @@ resource "aws_db_instance" "this" {
 }
 ```
 
-**Caveat on the data-source pattern above.** Even though `password_wo` is write-only on the resource, the `aws_secretsmanager_secret_version` data source still reads `secret_string` into state during refresh. The secret lands in the state file via the data source regardless of how the resource argument is marked. For values that must never touch state at all, use an ephemeral provider resource (Terraform 1.10+) or inject the secret at runtime from the CI/CD environment rather than reading it through a data source.
-
 ### nonsensitive() and ephemeral (Terraform 0.15+ / 1.10+)
 
-`nonsensitive()` (0.15+) exists for the narrow case where a literal value was inferred as sensitive by propagation but is provably not a secret (e.g. a derived length, a hash prefix used as a tag). It is NOT a tool for exposing real secret material into plan output or logs. Once unwrapped, the value appears in plan JSON, CI artifacts, and any place plans are persisted.
-
-`ephemeral` (1.10+) is distinct from `sensitive`: `ephemeral` values never enter state or plan files at all, `sensitive` still writes to state and only masks terminal display. Use `ephemeral` for short-lived credentials; use `sensitive` for values that must persist but shouldn't be shown.
+| Goal | Use | Tradeoff |
+|------|-----|----------|
+| derived non-secret incorrectly inferred as sensitive | `nonsensitive()` (0.15+) | only safe when provably not secret; value enters plan |
+| short-lived credential that must never persist | `ephemeral` (1.10+) | never in state or plan; provider/resource must support it |
+| value must persist but not display | `sensitive = true` | still in state; masks terminal only |
 
 ```hcl
 # ✅ GOOD - ephemeral keeps short-lived creds out of state (1.10+)
@@ -652,35 +647,21 @@ ephemeral "random_password" "session" {
 
 # ❌ BAD - unwrapping a real secret to silence a warning
 output "db_endpoint" {
-  # Laundering: plan JSON will now contain the secret
   value = nonsensitive(aws_db_instance.this.password)
 }
 ```
 
 ### Dynamic Blocks — Iterator Shadowing + Set Ordering
 
-A `dynamic` block (0.12+) introduces an implicit iterator named after the block itself. Inside `dynamic "ingress" { ... }`, `ingress.value` refers to the inner iteration — it **shadows** any outer `each.value` from a surrounding `for_each`. When nesting, rename the inner iterator with `iterator = rule` to disambiguate.
+| Gotcha | Cause | Fix |
+|--------|-------|-----|
+| outer `each.*` inside nested `dynamic` | block-name iterator shadows `each` | `iterator = rule` rename |
+| non-deterministic block order | `for_each = toset([...])` on a map/object | use map keyed by stable field |
 
-`dynamic` over `toset(...)` is non-deterministic: set iteration order is not stable across plans and can produce spurious diffs. For stable ordering, iterate a map (`for_each = { for k, v in var.map : k => v }`) or a pre-sorted list.
+- ❌ bare `dynamic "ingress"` inside outer `for_each` — `ingress.value` shadows `each.value`
+- ✅ rename inner iterator with `iterator = rule`; reference outer via `each.*`
 
 ```hcl
-# ❌ BAD - ingress.value shadows each.value from the outer for_each
-resource "aws_security_group" "this" {
-  for_each = var.security_groups
-
-  name = each.key
-
-  dynamic "ingress" {
-    for_each = each.value.rules
-    content {
-      from_port   = ingress.value.from_port
-      to_port     = ingress.value.to_port
-      protocol    = ingress.value.protocol
-      description = each.value.description  # OK here but confusing
-    }
-  }
-}
-
 # ✅ GOOD - explicit iterator rename removes ambiguity
 resource "aws_security_group" "this" {
   for_each = var.security_groups
@@ -694,7 +675,7 @@ resource "aws_security_group" "this" {
       from_port   = rule.value.from_port
       to_port     = rule.value.to_port
       protocol    = rule.value.protocol
-      description = each.value.description  # outer iterator still clear
+      description = each.value.description  # outer iterator clear
     }
   }
 }
@@ -1056,8 +1037,8 @@ Common model mistakes when generating HCL. Correct these before returning code:
 - emits `ignore_changes = all` or broad ignore lists to silence plan output instead of diagnosing drift root cause
 - uses `check` block expecting it to block apply; `check` is advisory, emits warnings only. Use `precondition`/`postcondition` to gate.
 - uses `each.value` inside a `dynamic` block intending the outer iterator — shadowed by the inner block name; rename with `iterator = ...`
-- emits hardcoded cloud resource IDs (`vpc-0abc...`, ARNs) instead of using `data` sources to look them up at plan time
-- pattern-matches ARNs from training data (e.g. guesses `arn:aws:iam::123456789012:role/admin`) instead of passing the ARN as an input variable
+- emits hardcoded cloud IDs/ARNs (`vpc-0abc...`, pattern-matched `arn:aws:iam::` patterns) from training data instead of using data sources or input variables
+- pairs `password_wo` with `aws_secretsmanager_secret_version` — the data source still reads `secret_string` into state on refresh. Use `ephemeral` (1.10+) or CI-injected env var.
 - iterates `dynamic` blocks over `toset(...)` of maps/objects — the set's undefined ordering causes non-deterministic block ordering in the plan diff; sort the list or use a map keyed by a stable field
 
 ---

@@ -517,14 +517,15 @@ var.value
 
 ### Provider Requirements and Alias Passing
 
-Every child module that accepts multiple provider instances **must** declare them via `configuration_aliases`. Every caller that uses non-default provider instances **must** pass them explicitly via a `providers = { ... }` map. Default provider inheritance is implicit only for a single unaliased provider of that type — never for aliases.
+- ✅ Child module declares aliased providers: `configuration_aliases = [aws.primary, aws.replica]`
+- ✅ Caller passes them explicitly: `providers = { aws.primary = aws.<caller-alias> }` on the `module` block
+- ❌ Default provider inheritance applies ONLY to a single unaliased provider — never for aliases
 
-✅ DO — multi-region child module declaring aliased providers:
+Child module — declare aliases in `versions.tf`, bind per resource:
 
 ```hcl
 # modules/replicated-s3/versions.tf
 terraform {
-  required_version = ">= 1.3"
   required_providers {
     aws = {
       source                = "hashicorp/aws"
@@ -534,31 +535,13 @@ terraform {
   }
 }
 
-# modules/replicated-s3/main.tf
-resource "aws_s3_bucket" "primary" {
-  provider = aws.primary
-  bucket   = var.bucket_name
-}
-
-resource "aws_s3_bucket" "replica" {
-  provider = aws.replica
-  bucket   = "${var.bucket_name}-replica"
-}
+# in any resource:
+provider = aws.primary
 ```
 
-✅ DO — root passes providers explicitly:
+Caller — pass the `providers` map on the `module` block:
 
 ```hcl
-provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
-}
-
-provider "aws" {
-  alias  = "eu_west_1"
-  region = "eu-west-1"
-}
-
 module "bucket" {
   source      = "./modules/replicated-s3"
   bucket_name = "app-data"
@@ -570,7 +553,7 @@ module "bucket" {
 }
 ```
 
-❌ DON'T — missing providers map on the module call:
+❌ DON'T — missing `providers` map on the module call:
 
 ```hcl
 module "bucket" {

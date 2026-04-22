@@ -400,63 +400,35 @@ security-scan:
 
 ### OIDC Trust Policy Correctness
 
-Every OIDC trust policy must pin three things:
+| Platform | Expected `aud` | Where to pin `sub` |
+|----------|----------------|---------------------|
+| GitHub Actions → AWS | `sts.amazonaws.com` | `repo:<org>/<repo>:ref:refs/heads/<branch>` |
+| GitHub Actions → Azure AD | `api://AzureADTokenExchange` | `repo:<org>/<repo>:environment:<env>` |
+| GitHub Actions → GCP | value passed via `audience` parameter | repo + ref or environment |
+| GitLab CI → AWS | matches `$CI_SERVER_URL` | project path + ref |
 
-1. **`aud` claim** — exact audience the identity provider expects (platform-specific, see below)
-2. **`sub` claim** — specific `repo:<org>/<repo>:ref:refs/heads/<branch>` or `repo:<org>/<repo>:environment:<env>`; no wildcards that cross the org/repo boundary
-3. **Repository claim** separately where the provider exposes it
+**Rules:**
+- ✅ pin `aud` to the exact value from the table
+- ✅ pin `sub` to a specific repo + branch or environment — no wildcards across org/repo
+- ❌ `sub` wildcards like `repo:*:*` or `repo:<org>/*:ref:*` let any repo assume the role
+- ❌ mismatched `aud` → token rejected with opaque error; fix `aud` per table, do not relax `sub`
 
-✅ DO — AWS IAM trust policy for GitHub Actions, pinned to `main`:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Principal": {
-      "Federated": "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
-    },
-    "Action": "sts:AssumeRoleWithWebIdentity",
-    "Condition": {
-      "StringEquals": {
-        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-      },
-      "StringLike": {
-        "token.actions.githubusercontent.com:sub": "repo:my-org/my-repo:ref:refs/heads/main"
-      }
-    }
-  }]
-}
-```
-
-❌ DON'T — wildcard `sub` claim (any GitHub repo can assume the role):
+✅ DO — AWS IAM trust-policy `Condition` block (the only non-boilerplate fragment):
 
 ```json
-"StringLike": {
-  "token.actions.githubusercontent.com:sub": "repo:*:*"
+"Condition": {
+  "StringEquals": {
+    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+  },
+  "StringLike": {
+    "token.actions.githubusercontent.com:sub": "repo:my-org/my-repo:ref:refs/heads/main"
+  }
 }
 ```
-
-❌ DON'T — missing or mismatched `aud`. The token is rejected with an opaque error, and models often "fix" it by relaxing `sub` instead of correcting the audience:
-
-```json
-"StringEquals": {
-  "token.actions.githubusercontent.com:aud": "api://AzureADTokenExchange"
-}
-```
-
-Platform-specific `aud` values:
-
-| Workload identity flow | Expected `aud` |
-|------------------------|----------------|
-| GitHub Actions → AWS | `sts.amazonaws.com` |
-| GitHub Actions → Azure AD | `api://AzureADTokenExchange` |
-| GitHub Actions → GCP | value passed via the action's `audience` parameter |
-| GitLab CI → AWS | matches `$CI_SERVER_URL` |
 
 ### Drift Detection — Alert, Do Not Auto-Apply
 
-Scheduled drift detection must alert on drift. It must **not** automatically reconcile it — out-of-band changes are often legitimate incident fixes, and silent reapply destroys forensic state.
+Scheduled drift detection alerts; it never auto-applies.
 
 ✅ DO — scheduled plan with alert on drift (exit code 2):
 
@@ -496,8 +468,6 @@ jobs:
       - uses: actions/checkout@v4
       - run: terraform apply -auto-approve
 ```
-
-Silently reverts manual fixes applied during incidents. Destroys forensic state. No human review.
 
 ---
 
