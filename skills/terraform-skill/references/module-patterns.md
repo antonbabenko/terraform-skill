@@ -456,8 +456,11 @@ For public modules, always include a LICENSE file:
 
 **Default behavior:**
 - If user doesn't specify: Ask explicitly
-- If project already exists: Detect from existing files (`.terraform/` or `.tofu/`)
-- If still unclear: Default to showing both options in documentation
+- If project already exists, infer from reliable signals (both runtimes share the `.terraform/` working directory, so its presence is **not** a differentiator):
+  - `required_version` constraint in `terraform { ... }` (e.g., an OpenTofu-only floor like `>= 1.6.0` set by the team's policy, or comments pinning the runtime)
+  - CI/build invocations — whether pipelines call the `terraform` or `tofu` binary explicitly
+  - `.terraform.lock.hcl` provenance — the lockfile is written by whichever binary ran `init`; check commit history or the surrounding scripts that produced it
+- If still unclear: Ask the user explicitly rather than guessing, or default to showing both options in documentation
 
 ---
 
@@ -510,6 +513,55 @@ var.application_port        # Not just "port"
 var.name
 var.type
 var.value
+```
+
+### Provider Requirements and Alias Passing
+
+- ✅ Child module declares aliased providers: `configuration_aliases = [aws.primary, aws.replica]`
+- ✅ Caller passes them explicitly: `providers = { aws.primary = aws.<caller-alias> }` on the `module` block
+- ❌ Default provider inheritance applies ONLY to a single unaliased provider — never for aliases
+
+Child module — declare aliases in `versions.tf`, bind per resource:
+
+```hcl
+# modules/replicated-s3/versions.tf
+terraform {
+  required_providers {
+    aws = {
+      source                = "hashicorp/aws"
+      version               = "~> 5.0"
+      configuration_aliases = [aws.primary, aws.replica]
+    }
+  }
+}
+
+# in any resource:
+provider = aws.primary
+```
+
+Caller — pass the `providers` map on the `module` block:
+
+```hcl
+module "bucket" {
+  source      = "./modules/replicated-s3"
+  bucket_name = "app-data"
+
+  providers = {
+    aws.primary = aws.us_east_1
+    aws.replica = aws.eu_west_1
+  }
+}
+```
+
+❌ DON'T — missing `providers` map on the module call:
+
+```hcl
+module "bucket" {
+  source      = "./modules/replicated-s3"
+  bucket_name = "app-data"
+  # MISSING: providers = { aws.primary = ..., aws.replica = ... }
+  # Plan fails: "No configuration for provider aws.primary"
+}
 ```
 
 ---
@@ -768,6 +820,8 @@ Common model mistakes to correct when generating or reviewing modules:
 - reaches for `terraform_remote_state` inside a single team's stack instead of wiring via module outputs
 - floats module sources (no `version` pin) in consumer code
 - pushes environment-specific policy (prod-only allowlists, region pins) into primitive/resource modules where it cannot be overridden
+- omits `configuration_aliases` in a multi-provider child module's `required_providers` — callers cannot pass aliased providers
+- drops the `providers = { aws = aws.region }` map from the module call on multi-region or multi-account deploys — resources land on the default provider
 
 ---
 

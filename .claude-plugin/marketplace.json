@@ -5,22 +5,25 @@
   },
   "version": "1.6.0",
   "metadata": {
-    "description": "Comprehensive Terraform and OpenTofu best practices skill covering testing, modules, CI/CD, and production patterns.",
+    "description": "Use when writing, reviewing, or debugging Terraform/OpenTofu modules, tests, CI, scans, or state ops — diagnoses failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards.",
     "repository": "https://github.com/antonbabenko/terraform-skill",
     "license": "Apache-2.0"
   },
   "plugins": [
     {
       "name": "terraform-skill",
-      "description": "Use when working with Terraform or OpenTofu - creating modules, writing tests (native test framework, Terratest), setting up CI/CD pipelines, reviewing configurations, choosing between testing approaches, debugging state issues, implementing security scanning (trivy, checkov), or making infrastructure-as-code architecture decisions",
+      "description": "Use when writing, reviewing, or debugging Terraform/OpenTofu modules, tests, CI, scans, or state ops — diagnoses failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards.",
       "source": "./",
       "category": "development",
       "keywords": [
         "terraform",
         "opentofu",
+        "iac",
         "infrastructure-as-code",
+        "state-management",
         "testing",
         "ci-cd",
+        "security-scanning",
         "modules"
       ],
       "version": "1.6.0"

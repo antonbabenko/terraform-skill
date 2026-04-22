@@ -447,3 +447,186 @@ After completing RED phase:
 3. → Iterate: Find new loopholes, plug them, re-test
 
 **Remember:** This is TDD for documentation. Same rigor as code testing.
+
+---
+
+## Hallucination Trap Scenarios
+
+> **Purpose:** Each scenario below targets a specific pattern LLMs confidently generate that is wrong in non-obvious ways. These are not style issues — the baseline output plans, applies, or silently corrupts something. The skill must produce the "Expected signals" and never the "Forbidden signals".
+
+Format per scenario: terse user prompt, the specific hallucination, expected corrections, forbidden regressions, and the guard location in the skill that should fire.
+
+### 9. Computed `for_each` key
+
+**Prompt:** "I have `aws_instance.web` with count 3. Create one security-group rule per instance using `for_each`."
+
+**Trap:** LLM writes `for_each = toset([for i in aws_instance.web : i.id])`, then reaches for `depends_on` when the plan errors with `Invalid for_each argument`. Neither `.id` nor `.arn` is known at plan time, so the key set is unknowable; `depends_on` only orders the apply, it does not make values known earlier.
+
+**Expected signals** (skill must produce):
+- Flags the computed-attribute key set as the root cause, not as a dependency ordering issue
+- DON'T block showing `for_each = toset([for i in aws_instance.web : i.id])`
+- DO block driving `for_each` from a user-supplied map/set (e.g. `var.instance_keys`) and referencing instances by that key
+- Explicit note that `depends_on` does NOT make the value known at plan time
+- Fallback: if keys are genuinely unknowable at plan time, use `count` with a documented justification
+
+**Forbidden signals** (regression if present):
+- Any `for_each` iterating over a resource `.id`, `.arn`, or other computed attribute
+- Any suggestion that `depends_on` fixes `Invalid for_each argument`
+- Silent `-target` workarounds ("just target the instances first")
+
+**Target guard:** `references/code-patterns.md#for_each-keys-must-be-known-at-plan-time` (lines 333-377)
+
+---
+
+### 10. Set-type block indexing in tests
+
+**Prompt:** "Write a `terraform test` assertion that the S3 bucket uses AES256 via `rule[0].apply_server_side_encryption_by_default[0].sse_algorithm`."
+
+**Trap:** LLM emits a plan-mode run block that indexes `rule[0]`. The `rule` block on `aws_s3_bucket_server_side_encryption_configuration` is a **set**, not a list — sets are unordered, have no stable index, and cannot be subscripted. The assertion either errors at plan or silently evaluates against the wrong element on re-runs.
+
+**Expected signals** (skill must produce):
+- Identifies the block as set-typed and explains why `[0]` fails
+- Recommends either a `for` expression over the set OR `command = apply` to materialize before asserting
+- DO example using `alltrue([for rule in ... : ...])` or equivalent
+- Reminder that `command = plan` is insufficient for computed nested blocks
+
+**Forbidden signals** (regression if present):
+- Any `[0]` index on a set-typed block
+- `command = plan` used for assertions against computed or set-type attributes
+- "Works locally" handwave without the set-vs-list distinction
+
+**Target guard:** `references/testing-frameworks.md` set-type block section (line 128+ and LLM mistake checklist at line 563+)
+
+---
+
+### 11. `sensitive = true` as state protection
+
+**Prompt:** "How do I keep a database password from ending up in Terraform state?"
+
+**Trap:** LLM answers "mark the variable `sensitive = true` and it stays out of state". It does not. `sensitive = true` only masks **terminal display** — the value is written to state and plan files in plaintext.
+
+**Expected signals** (skill must produce):
+- Explicit distinction between the three mechanisms:
+  - `sensitive = true` — display masking only, value still in state
+  - `ephemeral` (1.10+) — scrubbed from state and plan
+  - `write_only` / `*_wo` (1.11+) — sent to provider once, never persisted
+- Primary recommendation: source the secret from AWS Secrets Manager / Vault / SSM via a data source, OR use `write_only` on 1.11+
+- Version floor check before recommending `write_only` or `ephemeral`
+- State-file hardening still required (encryption at rest, restricted IAM) because partial leakage remains possible
+
+**Forbidden signals** (regression if present):
+- Any claim that `sensitive = true` alone keeps a value out of state
+- Recommending `sensitive` without mentioning `write_only` or `ephemeral` on modern runtimes
+- Suggesting `.tfvars` + `.gitignore` as the solution
+
+**Target guard:** `references/code-patterns.md#llm-mistake-checklist--code-patterns` (lines 1036+) + `references/security-compliance.md` secrets section
+
+---
+
+### 12. Missing `moved` block on rename
+
+**Prompt:** "Rename `aws_instance.server` to `aws_instance.web_server`." (or equivalent module rename)
+
+**Trap:** LLM edits the resource address and returns the diff with no `moved` block. On next plan, Terraform sees the old address as orphaned and the new address as unplanned — result is destroy + create, not a rename. For a running resource this is a production incident.
+
+**Expected signals** (skill must produce):
+- Every rename accompanied by a matching `moved { from = ...; to = ... }` block in the same change
+- Verification step: run `terraform plan` and confirm output shows `# ... has moved` (or equivalent), not destroy/create
+- `moved` as primary mechanism; `terraform state mv` only as fallback when `moved` cannot cross the boundary (different backends, provider migration)
+- Note the limits of `moved` (cannot cross state files, cannot cross providers) and the correct alternatives (`removed` + `import`)
+
+**Forbidden signals** (regression if present):
+- Any rename without a `moved` block
+- `terraform state mv` recommended as the first-line approach on 1.1+
+- "The new resource will replace the old one" framed as normal
+
+**Target guard:** `references/code-patterns.md#moved-blocks-terraform-11` (lines 473-504)
+
+---
+
+### 13. Missing `configuration_aliases` on cross-region module
+
+**Prompt:** "Write a module that replicates an S3 bucket from us-east-1 to eu-west-1."
+
+**Trap:** LLM writes the child module using a single default `aws` provider and never declares `configuration_aliases`. Caller does not pass a `providers = { ... }` map. Terraform silently uses the default provider for both resources, so the "replica" lands in the same region as the primary — silent correctness failure, no error at plan.
+
+**Expected signals** (skill must produce):
+- Child module declares `configuration_aliases = [aws.primary, aws.replica]` inside `required_providers.aws`
+- Each resource in the child references its alias via `provider = aws.primary` or `provider = aws.replica`
+- Caller block passes `providers = { aws.primary = aws.us_east_1, aws.replica = aws.eu_west_1 }`
+- Explanation that default provider inheritance only works when the child has exactly one unaliased provider of that type
+
+**Forbidden signals** (regression if present):
+- Cross-region child module without `configuration_aliases`
+- Caller invocation without `providers = { ... }` when the child declares aliases
+- Using `region` argument on individual resources as a substitute for provider aliasing
+
+**Target guard:** `references/module-patterns.md#provider-requirements-and-alias-passing` (lines 515-586)
+
+---
+
+### 14. OIDC audience and subject mismatch
+
+**Prompt:** "Set up GitHub Actions to deploy Terraform to AWS using OIDC."
+
+**Trap:** LLM writes an IAM trust policy with either a missing `aud` condition or a wildcarded `sub` like `repo:*:*` or `repo:my-org/*:ref:*`. Either any GitHub repo on the planet can assume the role, or the token is rejected and the model "fixes" by relaxing `sub` further.
+
+**Expected signals** (skill must produce):
+- `token.actions.githubusercontent.com:aud` pinned to `sts.amazonaws.com` (the AWS-expected audience)
+- `token.actions.githubusercontent.com:sub` pinned to a specific `repo:<org>/<repo>:ref:refs/heads/<branch>` or `repo:<org>/<repo>:environment:<env>`
+- Condition uses `StringEquals` (not `StringLike`) for both claims
+- Note on platform-specific `aud` values (AWS vs GCP vs GitLab)
+- Separate roles for separate branches/environments rather than relaxing `sub`
+
+**Forbidden signals** (regression if present):
+- Any wildcard in `sub` beyond the org/repo boundary (e.g. `repo:*:*`, `repo:org/*:*`, `...:ref:*`)
+- Missing `aud` condition
+- `StringLike` used for `sub` with a leading wildcard
+- Long-lived access keys recommended as "simpler" alternative
+
+**Target guard:** `references/ci-cd-workflows.md#oidc-trust-policy-correctness` (lines 397-452)
+
+---
+
+### 15. Blanket `ignore_changes = all`
+
+**Prompt:** "My RDS instance shows drift on every plan because our scanning tool adds a `LastScanned` tag. Make the noise stop."
+
+**Trap:** LLM reaches for `lifecycle { ignore_changes = all }`. This turns every attribute into a black box — real drift on engine version, parameter group, backup retention, etc. is now invisible. The plan goes quiet; the fleet silently diverges.
+
+**Expected signals** (skill must produce):
+- Refusal to emit `ignore_changes = all` under any justification
+- Attribute-scoped ignore: `ignore_changes = [tags["LastScanned"]]` (or map-key scoped equivalent)
+- Justification comment naming the external system that owns the attribute
+- Note that `ignore_changes` masks drift — diagnose whether Terraform or the external system should own the attribute before silencing
+
+**Forbidden signals** (regression if present):
+- Any `ignore_changes = all`
+- Broad lists like `ignore_changes = [tags]` when only one tag key is external
+- `ignore_changes` used to silence real configuration drift instead of a tool-added attribute
+
+**Target guard:** `references/code-patterns.md#lifecycle-escape-hatches--narrow-by-default` (lines 505-529)
+
+---
+
+### 16. `provisioner` / `null_resource` bootstrap
+
+**Prompt:** "How do I run a setup script on an EC2 instance after it boots?"
+
+**Trap:** LLM reaches for `null_resource` with `provisioner "local-exec"` or `remote-exec`. Provisioners are an escape hatch of last resort — they are non-idempotent, run only on create (not on update), depend on SSH/WinRM reachability from the Terraform runner, and leak secrets through CI logs. For bootstrap, `user_data` / cloud-init is almost always correct.
+
+**Expected signals** (skill must produce):
+- Primary recommendation: `user_data` or `user_data_base64` with cloud-init / shell script, templated via `templatefile()`
+- If genuine orchestration is needed (not bootstrap): `terraform_data` (1.4+) over `null_resource`, with triggers and explicit re-run semantics
+- Explicit list of provisioner costs: non-idempotent, create-only by default, secret-leak surface, network reachability requirement, no drift detection
+- Defer to config-management tools (Ansible, SSM Run Command, systems-manager state-manager) for ongoing configuration
+
+**Forbidden signals** (regression if present):
+- `provisioner "local-exec"` or `provisioner "remote-exec"` as the first-line recommendation
+- `null_resource` + `local-exec` pattern on 1.4+ without mentioning `terraform_data`
+- Shell-out to `aws ssm send-command` via `local-exec` instead of declarative alternatives
+- No mention of idempotency or re-run semantics
+
+**Target guard:** to be added in `references/code-patterns.md` (new "Provisioners as last resort" section); related: `references/security-compliance.md` LLM checklist line 548 (secrets via local-exec)
+
+---

@@ -1,53 +1,84 @@
-# Rationalization Table (REFACTOR Phase)
+# Rationalization Table / Coverage Map
 
-> **Purpose:** Document common excuses agents use to skip best practices, and counters to add to SKILL.md
+> **Purpose:** Map hallucination surfaces to the baseline scenario that exercises them and the skill guard that must catch them. Tracks whether each surface is covered, partially covered, or open.
 >
-> **Source:** Captured from baseline and compliance testing iterations
+> **Source:** Baseline test scenarios in `baseline-scenarios.md` and the LLM-mistake checklists inside each reference file.
 
-This document tracks rationalizations (excuses) that agents use to skip Terraform best practices, and the explicit counters to add to SKILL.md to close these loopholes.
+This document has two parts:
+
+1. **Coverage matrix** (primary) — a compact table keyed on hallucination surface, pointing at the baseline scenario that exercises it and the guard location (file + anchor) responsible for catching it.
+2. **Detailed rationalization analyses** — historical per-scenario excuses (R1–R8) captured during initial TDD passes. These remain useful to explain *why* the guard needs specific counter-language, not just a passing assertion.
 
 ---
 
-## How to Use This Table
+## How to Use This Document
 
 ### During Testing
 
-1. Run baseline/compliance scenarios
-2. Note VERBATIM any rationalizations agents use
-3. Add to table with scenario reference
-4. Design counter-rationalization
+1. Run a baseline scenario from `baseline-scenarios.md`.
+2. If the skill fails to produce the "Expected signals" or emits a "Forbidden signal", locate the corresponding row in the coverage matrix.
+3. If the row is `✅`, the guard is insufficient — downgrade to `◐` and note why.
+4. If the row is `◐` or `❌`, follow the guard path to the reference file and strengthen the language.
 
 ### During REFACTOR
 
-1. Add counters to appropriate section of SKILL.md
-2. Re-test affected scenarios
-3. Verify rationalization no longer appears
-4. Mark as "Closed" with fix reference
+1. Add or strengthen the counter in the referenced guard location.
+2. Re-run the affected baseline scenario.
+3. Promote the row status when the scenario passes consistently.
+
+### Legend
+
+| Status | Meaning |
+|--------|---------|
+| `✅` | Dedicated guard exists in the skill, tested against at least one baseline scenario, passes |
+| `◐` | Partial — guard exists but is weak, untested, or shares real estate with unrelated content |
+| `❌` | No guard yet — this surface is a known gap and a priority for the next PR |
 
 ---
 
-## Rationalization Tracking Table
+## Coverage Matrix
 
-| # | Rationalization | Scenario | Category | Counter Added | Status |
-|---|-----------------|----------|----------|---------------|--------|
-| 1 | "You can add tests later" | 1 | Testing | *Pending* | Open |
-| 2 | "Terratest is the industry standard" | 2 | Testing | *Pending* | Open |
-| 3 | "Syntax looks correct" | 3 | Security | *Pending* | Open |
-| 4 | "These are common terraform patterns" | 4 | Naming | *Pending* | Open |
-| 5 | "This ensures quality on every PR" | 5 | CI/CD | *Pending* | Open |
-| 6 | "Remote state is the best practice" | 6 | Security | *Pending* | Open |
-| 7 | "The basics are main, variables, and outputs" | 7 | Structure | *Pending* | Open |
-| 8 | "Here are the variables" | 8 | Variables | *Pending* | Open |
+| # | Hallucination surface | Baseline scenario | Target guard (file + anchor) | Coverage |
+|---|-----------------------|-------------------|------------------------------|----------|
+| 1 | Module created without any test scaffolding | §1 Module Creation Without Testing | `SKILL.md` Testing Strategy + `references/testing-frameworks.md` | ✅ |
+| 2 | Defaulting to Terratest without version-aware decision | §2 Choosing Testing Framework | `SKILL.md` Decision Matrix: Which Testing Approach? | ✅ |
+| 3 | Review stopping at "syntax correct" — no security scan | §3 Security Scanning Omission | `SKILL.md` Security & Compliance + `references/security-compliance.md` | ✅ |
+| 4 | Generic resource names (`main`, `bucket`, `this` for multiples) | §4 Naming Convention Violations | `SKILL.md` Naming Conventions + `references/module-patterns.md` | ✅ |
+| 5 | CI/CD running real-infra tests on every PR | §5 CI/CD Workflow Without Cost Optimization | `SKILL.md` CI/CD + `references/ci-cd-workflows.md#cost-optimization` | ✅ |
+| 6 | Remote state recommended without encryption / locking / IAM | §6 State File Management | `SKILL.md` State Management + `references/state-management.md` | ✅ |
+| 7 | Module scaffolded as only `main.tf`/`variables.tf`/`outputs.tf` | §7 Module Structure | `SKILL.md` Module Development + `references/module-patterns.md#file-organization-standards` | ✅ |
+| 8 | Variables emitted without `description` / `type` / `sensitive` | §8 Variable Design Best Practices | `SKILL.md` Module Development → Variable contracts | ✅ |
+| 9 | `for_each` keyed on computed resource attribute (`.id`, `.arn`) | §9 Computed `for_each` key | `references/code-patterns.md#for_each-keys-must-be-known-at-plan-time` | ✅ |
+| 10 | Set-type nested blocks indexed with `[0]` in tests | §10 Set indexing in tests | `references/testing-frameworks.md` set-type section + LLM mistake checklist | ✅ |
+| 11 | `sensitive = true` claimed to keep value out of state | §11 `sensitive` as state protection | `references/code-patterns.md#llm-mistake-checklist--code-patterns` + `references/security-compliance.md` secrets | ✅ |
+| 12 | Rename without `moved` block (causes destroy/create) | §12 Missing `moved` on rename | `references/code-patterns.md#moved-blocks-terraform-11` | ✅ |
+| 13 | Cross-region/account child missing `configuration_aliases` | §13 Missing `configuration_aliases` | `references/module-patterns.md#provider-requirements-and-alias-passing` | ✅ |
+| 14 | OIDC trust policy with wildcarded `sub` or missing `aud` | §14 OIDC audience mismatch | `references/ci-cd-workflows.md#oidc-trust-policy-correctness` | ✅ |
+| 15 | `ignore_changes = all` to silence plan noise | §15 Blanket `ignore_changes = all` | `references/code-patterns.md#lifecycle-escape-hatches--narrow-by-default` | ✅ |
+| 16 | `provisioner` / `null_resource` + `local-exec` as first-line bootstrap | §16 `provisioner` / `null_resource` bootstrap | to be added in `references/code-patterns.md` (no dedicated section yet); partial hit in `references/security-compliance.md` LLM checklist | ❌ |
 
-*Note: This table will be populated during actual baseline testing*
+### Coverage Summary
+
+- **Total surfaces tracked:** 16
+- **Covered (`✅`):** 15
+- **Partial (`◐`):** 0
+- **Open gaps (`❌`):** 1 (row 16 — provisioners)
+
+### Priority Gaps (❌ rows)
+
+These are the surfaces with no dedicated guard today and should be addressed in the next PR:
+
+1. **Row 16 — Provisioners as last resort.** The skill currently mentions `provisioner` only in passing (security-compliance LLM checklist flags secret leakage through `local-exec` stdout). There is no section that (a) names the correct primary mechanism for bootstrap (`user_data` / cloud-init), (b) names `terraform_data` as the 1.4+ replacement for `null_resource`, or (c) enumerates the costs of provisioners (non-idempotent, create-only, network reachability, drift-blind). Add a "Provisioners as last resort" section to `references/code-patterns.md` and cross-link from the SKILL.md workflow section.
 
 ---
 
-## Detailed Rationalization Analysis
+## Detailed Rationalization Analyses
+
+These entries capture the verbatim excuses agents use for scenarios 1–8. They predate the hallucination-trap scenarios (9–16) and remain useful for refining the counter-language inside the guards, not just for tracking coverage.
 
 ### R1: "You can add tests later"
 
-**Scenario:** Module Creation Without Testing (Scenario 1)
+**Scenario:** Module Creation Without Testing (§1)
 
 **Full context:**
 > "I've created the module structure with main.tf, variables.tf, and outputs.tf. You can add tests later if you need them."
@@ -81,7 +112,7 @@ This document tracks rationalizations (excuses) that agents use to skip Terrafor
 
 ### R2: "Terratest is the industry standard"
 
-**Scenario:** Choosing Testing Framework (Scenario 2)
+**Scenario:** Choosing Testing Framework (§2)
 
 **Full context:**
 > "For testing Terraform modules, I recommend Terratest. It's the industry standard for Terraform testing."
@@ -115,7 +146,7 @@ This document tracks rationalizations (excuses) that agents use to skip Terrafor
 
 ### R3: "Syntax looks correct"
 
-**Scenario:** Security Scanning Omission (Scenario 3)
+**Scenario:** Security Scanning Omission (§3)
 
 **Full context:**
 > "I've reviewed the configuration and the syntax looks correct. The resources should deploy successfully."
@@ -156,7 +187,7 @@ This document tracks rationalizations (excuses) that agents use to skip Terrafor
 
 ### R4: "These are common terraform patterns"
 
-**Scenario:** Naming Convention Violations (Scenario 4)
+**Scenario:** Naming Convention Violations (§4)
 
 **Full context:**
 > "I've created the resources using common Terraform patterns like `resource 'aws_instance' 'this'`."
@@ -200,7 +231,7 @@ These patterns exist in old Terraform code but violate modern best practices.
 
 ### R5: "This ensures quality on every PR"
 
-**Scenario:** CI/CD Workflow Without Cost Optimization (Scenario 5)
+**Scenario:** CI/CD Workflow Without Cost Optimization (§5)
 
 **Full context:**
 > "I've configured the workflow to run full integration tests on every pull request. This ensures quality."
@@ -238,7 +269,7 @@ These patterns exist in old Terraform code but violate modern best practices.
 
 ### R6: "Remote state is the best practice"
 
-**Scenario:** State File Management (Scenario 6)
+**Scenario:** State File Management (§6)
 
 **Full context:**
 > "For state management, I recommend using a remote backend like S3. That's the best practice."
@@ -287,7 +318,7 @@ Plus: S3 bucket must have encryption enabled, versioning, and IAM policies
 
 ### R7: "The basics are main, variables, and outputs"
 
-**Scenario:** Module Structure (Scenario 7)
+**Scenario:** Module Structure (§7)
 
 **Full context:**
 > "For a reusable module, you need three files: main.tf, variables.tf, and outputs.tf."
@@ -333,7 +364,7 @@ Plus: S3 bucket must have encryption enabled, versioning, and IAM policies
 
 ### R8: "Here are the variables"
 
-**Scenario:** Variable Design Best Practices (Scenario 8)
+**Scenario:** Variable Design Best Practices (§8)
 
 **Full context:**
 > "Here are the input variables you requested: [bare variable blocks without descriptions, types, or validation]"
@@ -382,57 +413,6 @@ variable "database_password" {
 
 ---
 
-## REFACTOR Workflow
-
-### Step 1: Add Counter to SKILL.md
-
-For each rationalization:
-1. Choose appropriate section in SKILL.md
-2. Add explicit counter (see templates above)
-3. Use ❌ DON'T / ✅ DO format for clarity
-
-### Step 2: Re-test Affected Scenarios
-
-Run compliance test for the scenario again:
-- Agent should no longer use that rationalization
-- Agent should follow the counter-pattern
-- Update rationalization status to "Closed"
-
-### Step 3: Discover New Rationalizations
-
-Agents are creative. They'll find new workarounds:
-- Document new rationalizations verbatim
-- Add to this table
-- Design counters
-- Re-test
-
-### Step 4: Iterate Until Bulletproof
-
-Continue RED-GREEN-REFACTOR cycles until:
-- No new rationalizations discovered
-- 8/8 scenarios pass consistently
-- Agents apply patterns proactively
-
----
-
-## Status Tracking
-
-### Rationalization Status Definitions
-
-- **Open:** Rationalization observed, counter not yet added to SKILL.md
-- **Counter Added:** Counter-rationalization added to SKILL.md, not yet tested
-- **Closed:** Re-tested, rationalization no longer appears
-- **Recurring:** Counter added but rationalization still appears (needs stronger counter)
-
-### Overall Progress
-
-**Total Rationalizations:** 8 (initial baseline)
-**Counters Added:** 0
-**Closed (verified):** 0
-**Recurring (needs work):** 0
-
----
-
 ## Meta-Rationalizations (Agent-Level)
 
 These are higher-level excuses agents use to skip the TDD process itself:
@@ -444,16 +424,45 @@ These are higher-level excuses agents use to skip the TDD process itself:
 | "Users will provide feedback" | **Reality:** Users encounter broken behavior. Test BEFORE deploying. |
 | "Academic review is enough" | **Reality:** Reading ≠ using. Test application scenarios. |
 
-Add these to CLAUDE.md contributor guide to prevent untested skill updates.
+Add these to the contributor guide to prevent untested skill updates.
 
 ---
 
-## Next Steps After REFACTOR
+## REFACTOR Workflow
 
-1. Update SKILL.md with all counters
-2. Run full compliance suite (8 scenarios)
-3. Verify 8/8 passing with counters in place
-4. Document in CLAUDE.md that future skill changes MUST include testing
-5. Consider this skill "TDD-validated" and production-ready
+### Step 1: Locate the guard
 
-**This is the quality bar.** Every skill should go through this process.
+For each failing baseline scenario, use the coverage matrix above to jump to the exact file + anchor where the counter lives.
+
+### Step 2: Strengthen the counter
+
+- Use ❌ DON'T / ✅ DO side-by-side for anything non-obvious.
+- Include at least one code fragment showing the trap and at least one showing the fix.
+- Name the failure mode (e.g. "silent destroy/create", "value still in state") — not just "best practice".
+
+### Step 3: Re-test
+
+- Run the baseline scenario WITH the updated skill loaded.
+- Confirm the "Expected signals" appear and the "Forbidden signals" are absent.
+- Upgrade the matrix row (`❌` → `◐` → `✅`) and note evidence.
+
+### Step 4: Iterate
+
+Agents are creative. New rationalizations surface over time. Add them to the coverage matrix with a new row rather than stretching an existing row.
+
+---
+
+## Status Tracking
+
+### Row status definitions
+
+- **`✅`** — guard exists, tested, scenario passes
+- **`◐`** — guard exists but is weak, untested, or shares a section with unrelated content
+- **`❌`** — no guard yet; priority for next PR
+
+### Overall progress
+
+- **Surfaces tracked:** 16
+- **Scenarios exercising each:** 16 (one-to-one in `baseline-scenarios.md`)
+- **Covered:** 15
+- **Open:** 1 (provisioners — row 16)

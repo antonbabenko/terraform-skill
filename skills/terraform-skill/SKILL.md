@@ -1,6 +1,6 @@
 ---
 name: terraform-skill
-description: Use when working with Terraform or OpenTofu - creating modules, writing tests (native test framework, Terratest), setting up CI/CD pipelines, reviewing configurations, choosing between testing approaches, debugging state issues, managing remote state backends, implementing security scanning (trivy, checkov), or making infrastructure-as-code architecture decisions
+description: Use when writing, reviewing, or debugging Terraform/OpenTofu modules, tests, CI, scans, or state ops — diagnoses failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards.
 license: Apache-2.0
 metadata:
   author: Anton Babenko
