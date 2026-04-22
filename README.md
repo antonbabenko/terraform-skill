@@ -237,6 +237,7 @@ Report bugs or request features via [GitHub Issues](https://github.com/antonbabe
 - [HashiCorp Recommended Practices](https://developer.hashicorp.com/terraform/cloud-docs/recommended-practices)
 
 ### Community resources
+- [compliance.tf](https://compliance.tf) - Terraform compliance-as-code patterns and examples
 - [Awesome Terraform](https://github.com/shuaibiyy/awesome-tf)
 - [Awesome Terraform Compliance](https://github.com/antonbabenko/awesome-terraform-compliance)
 - [Terraform Best Practices](https://terraform-best-practices.com) - the guide this skill is based on
