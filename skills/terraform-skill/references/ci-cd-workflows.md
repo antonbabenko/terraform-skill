@@ -31,8 +31,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Format
         run: terraform fmt -check -recursive
@@ -53,7 +53,8 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
 
       - name: Run Terraform Tests
         run: terraform test
@@ -73,8 +74,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
@@ -83,7 +84,7 @@ jobs:
         run: terraform plan -out=tfplan
 
       - name: Upload Plan
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: tfplan
@@ -94,13 +95,16 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
 
       - name: Download Plan
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: tfplan
+
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Apply
         run: terraform apply tfplan
@@ -113,7 +117,7 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Infracost
         uses: infracost/actions/setup@v2
@@ -284,10 +288,10 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -331,11 +335,11 @@ jobs:
 ### 2. Require Approvals for Production
 
 ```yaml
+# GitHub Actions — configure required reviewers on the `production`
+# environment in repo Settings -> Environments -> Protection rules.
 apply:
   environment:
     name: production
-    # Requires manual approval in GitHub
-  when: manual
 ```
 
 ### 3. Use Remote State
@@ -379,7 +383,7 @@ terraform {
 security-scan:
   runs-on: ubuntu-latest
   steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Run Trivy
       uses: aquasecurity/trivy-action@master
@@ -393,6 +397,107 @@ security-scan:
         directory: .
         framework: terraform
 ```
+
+### OIDC Trust Policy Correctness
+
+Every OIDC trust policy must pin three things:
+
+1. **`aud` claim** — exact audience the identity provider expects (platform-specific, see below)
+2. **`sub` claim** — specific `repo:<org>/<repo>:ref:refs/heads/<branch>` or `repo:<org>/<repo>:environment:<env>`; no wildcards that cross the org/repo boundary
+3. **Repository claim** separately where the provider exposes it
+
+✅ DO — AWS IAM trust policy for GitHub Actions, pinned to `main`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {
+      "Federated": "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+    },
+    "Action": "sts:AssumeRoleWithWebIdentity",
+    "Condition": {
+      "StringEquals": {
+        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+      },
+      "StringLike": {
+        "token.actions.githubusercontent.com:sub": "repo:my-org/my-repo:ref:refs/heads/main"
+      }
+    }
+  }]
+}
+```
+
+❌ DON'T — wildcard `sub` claim (any GitHub repo can assume the role):
+
+```json
+"StringLike": {
+  "token.actions.githubusercontent.com:sub": "repo:*:*"
+}
+```
+
+❌ DON'T — missing or mismatched `aud`. The token is rejected with an opaque error, and models often "fix" it by relaxing `sub` instead of correcting the audience:
+
+```json
+"StringEquals": {
+  "token.actions.githubusercontent.com:aud": "api://AzureADTokenExchange"
+}
+```
+
+Platform-specific `aud` values:
+
+| Workload identity flow | Expected `aud` |
+|------------------------|----------------|
+| GitHub Actions → AWS | `sts.amazonaws.com` |
+| GitHub Actions → Azure AD | `api://AzureADTokenExchange` |
+| GitHub Actions → GCP | value passed via the action's `audience` parameter |
+| GitLab CI → AWS | matches `$CI_SERVER_URL` |
+
+### Drift Detection — Alert, Do Not Auto-Apply
+
+Scheduled drift detection must alert on drift. It must **not** automatically reconcile it — out-of-band changes are often legitimate incident fixes, and silent reapply destroys forensic state.
+
+✅ DO — scheduled plan with alert on drift (exit code 2):
+
+```yaml
+# .github/workflows/drift-detection.yml
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - name: Plan (detect drift)
+        id: plan
+        run: terraform plan -detailed-exitcode -out=plan.bin
+        continue-on-error: true
+      - name: Alert on drift
+        if: steps.plan.outcome == 'failure' && steps.plan.outputs.exitcode == '2'
+        run: |
+          echo "Drift detected. Requires human review before apply."
+          # send to Slack / PagerDuty / issue tracker
+```
+
+`plan -detailed-exitcode` exit codes: `0` = no drift, `1` = plan failed, `2` = drift detected.
+
+❌ DON'T — scheduled auto-apply that silently reconciles drift:
+
+```yaml
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: terraform apply -auto-approve
+```
+
+Silently reverts manual fixes applied during incidents. Destroys forensic state. No human review.
 
 ---
 
@@ -480,6 +585,9 @@ Common model mistakes to correct before returning pipeline recommendations:
 - uses unpinned provider versions, causing drift between local and CI runs
 - skips the policy/security stage despite the pipeline claiming compliance
 - grants CI long-lived static cloud credentials instead of OIDC / workload-identity federation
+- writes OIDC trust policies with wildcard `sub` claims (`repo:*:*`, `repo:<org>/*:ref:*`) — any repo or branch can assume the role
+- mismatches the `aud` claim between CI platform and cloud provider, then relaxes `sub` to "fix" the resulting error
+- implements scheduled "drift detection" as `terraform apply -auto-approve` on cron — silently reverts out-of-band changes; use `plan -detailed-exitcode` + alert
 - fails to restrict artifact access when `terraform show -json` results may contain sensitive plan output
 - merges provider/runtime upgrades with functional changes in the same PR
 
