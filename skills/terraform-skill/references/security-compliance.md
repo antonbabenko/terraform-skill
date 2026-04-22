@@ -190,6 +190,88 @@ resource "aws_security_group_rule" "app_https" {
 }
 ```
 
+### ❌ DON'T: Use Inline Security Group Rules
+
+```hcl
+# BAD: Inline ingress/egress blocks
+resource "aws_security_group" "web" {
+  name        = "web-sg"
+  description = "Web server security group"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {  # ❌ Inline rules cause issues
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  egress {  # ❌ Avoid inline rules
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+```
+
+### ✅ DO: Use Separate Security Group Rule Resources
+
+**Preferred (AWS provider v5+):** Use `aws_vpc_security_group_ingress_rule` / `aws_vpc_security_group_egress_rule`:
+
+```hcl
+# Best: Modern individual rule resources (AWS provider v5+)
+resource "aws_security_group" "web" {
+  name        = "web-sg"
+  description = "Web server security group"
+  vpc_id      = aws_vpc.this.id
+
+  # No inline rules - managed separately
+}
+
+resource "aws_vpc_security_group_ingress_rule" "web_https" {
+  security_group_id = aws_security_group.web.id
+  description       = "HTTPS from internal VPC"
+  cidr_ipv4         = "10.0.0.0/16"
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+
+# Scope egress to needed ports when possible — avoid 0.0.0.0/0 with ip_protocol = "-1"
+resource "aws_vpc_security_group_egress_rule" "web_https_out" {
+  security_group_id = aws_security_group.web.id
+  description       = "HTTPS to external services"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+```
+
+**Also acceptable:** `aws_security_group_rule` (older but still supported):
+
+```hcl
+resource "aws_security_group_rule" "web_https_ingress" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["10.0.0.0/16"]
+  security_group_id = aws_security_group.web.id
+}
+```
+
+**Why avoid inline rules:**
+
+| Issue | Inline Rules | Separate Resources |
+|-------|--------------|-------------------|
+| Rule changes | Recreates entire SG (downtime) | Updates only the rule |
+| Mixing approaches | Conflicts and overwrites | N/A - consistent pattern |
+| Dynamic rules | Complex `dynamic` blocks needed | Native `for_each` per resource |
+| State management | Rules buried in SG state | Each rule tracked separately |
+| Conditional rules | Complex nested dynamics | Simple `count` or `for_each` |
+
 ---
 
 ## Compliance Testing
