@@ -19,6 +19,12 @@ Comprehensive Terraform and OpenTofu best practices skill for AI coding agents (
 - Versioning strategies
 - Public vs private module patterns
 
+🗄️ **State Management**
+- Remote backend configuration (S3, Azure, GCS, Terraform Cloud)
+- State locking and security patterns
+- Multi-team state isolation strategies
+- State migration and recovery procedures
+
 🔄 **CI/CD Integration**
 - GitHub Actions workflows
 - GitLab CI examples
@@ -158,6 +164,9 @@ Claude will automatically use the skill when working with Terraform/OpenTofu cod
 **Create a module with tests:**
 > "Create a Terraform module for AWS VPC with native tests"
 
+**Set up remote state:**
+> "Configure S3 backend with DynamoDB locking for Terraform state"
+
 **Review existing code:**
 > "Review this Terraform configuration following best practices"
 
@@ -166,6 +175,9 @@ Claude will automatically use the skill when working with Terraform/OpenTofu cod
 
 **Testing strategy:**
 > "Help me choose between native tests and Terratest for my modules"
+
+**State management:**
+> "How should I organize state files for a multi-team environment?"
 
 ## What It Covers
 
@@ -200,6 +212,7 @@ Decision matrices for:
 - Policy-as-code patterns
 - Secrets management
 - State file security
+- State backend encryption
 - Compliance scanning workflows
 
 ### Common Patterns & Anti-patterns

@@ -61,6 +61,65 @@ terraform show -json tfplan | jq -r '.' > tfplan.json
 terraform show tfplan | grep "will be created"
 ```
 
+### State Management
+
+```bash
+# View all resources in state
+terraform state list
+
+# Show specific resource details
+terraform state show aws_instance.web
+
+# Move/rename resource in state (refactoring)
+terraform state mv aws_instance.old aws_instance.new
+terraform state mv aws_instance.app module.compute.aws_instance.app
+
+# Remove resource from state (keeps actual resource)
+terraform state rm aws_instance.temporary
+
+# Import existing resource into state
+terraform import aws_instance.web i-1234567890abcdef0
+
+# Import using import blocks (1.5+)
+# Define in .tf: import { to = aws_instance.web, id = "i-123..." }
+terraform plan -generate-config-out=imported.tf
+
+# Detect configuration drift
+terraform plan -refresh-only
+
+# Update state to match reality (no infrastructure changes)
+terraform apply -refresh-only
+
+# Backup state to file
+terraform state pull > backup-$(date +%Y%m%d).tfstate
+
+# Restore state from backup (DANGEROUS)
+terraform state push backup.tfstate
+
+# Force unlock stuck state lock
+terraform force-unlock LOCK_ID
+```
+
+### State Backend Migration
+
+```bash
+# Migrate from local to remote backend
+# 1. Add backend config to backend.tf
+# 2. Run migration
+terraform init -migrate-state
+
+# Change backend without migrating state
+terraform init -reconfigure
+
+# Pass backend config at runtime
+terraform init \
+  -backend-config="key=prod/terraform.tfstate" \
+  -backend-config="dynamodb_table=terraform-locks"
+
+# Or use config file
+terraform init -backend-config=backend-prod.hcl
+```
+
 ---
 
 ## Decision Flowchart
@@ -266,6 +325,147 @@ bucketName := fmt.Sprintf("test-bucket-%s", uniqueId)
 5. **Share test resources when safe**
    - VPCs, security groups (rarely change)
    - Don't share: instances, databases (change often)
+
+### Issue: State lock is stuck
+
+**Symptoms:**
+```
+Error: Error acquiring the state lock
+Lock Info:
+  ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  Who: user@hostname
+  Created: 2026-01-20 12:00:00
+```
+
+**Common Causes:**
+1. Terraform process crashed or was killed
+2. Network interruption during operation
+3. CI/CD job terminated unexpectedly
+
+**Solution:**
+
+```bash
+# 1. Verify the operation is NOT actually running
+# Check the host mentioned in lock info
+ssh user@hostname "ps aux | grep terraform"
+
+# Or check CI/CD job status
+# GitHub Actions: Check workflow runs
+# GitLab CI: Check pipeline jobs
+
+# 2. Only if confirmed the operation is not running:
+terraform force-unlock LOCK_ID
+
+# 3. Document why you unlocked
+echo "Force-unlocked due to CI job timeout" > unlock-notes.txt
+```
+
+**Prevention:**
+```yaml
+# GitHub Actions - Use concurrency control
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false  # Wait, don't cancel
+```
+
+### Issue: State file is corrupted or lost
+
+**Symptoms:**
+- Error: "state snapshot was created by Terraform v1.8.0"
+- Error: "Failed to load state"
+- State file missing or unreadable
+
+**Solutions:**
+
+**If versioning enabled (S3):**
+```bash
+# List versions
+aws s3api list-object-versions \
+  --bucket my-terraform-state \
+  --prefix prod/terraform.tfstate
+
+# Restore previous version
+aws s3api get-object \
+  --bucket my-terraform-state \
+  --key prod/terraform.tfstate \
+  --version-id PREVIOUS_VERSION_ID \
+  terraform.tfstate.restored
+
+# Push restored state
+terraform state push terraform.tfstate.restored
+```
+
+**If no backup exists:**
+```bash
+# Recreate state by importing all resources
+terraform import aws_vpc.main vpc-12345678
+terraform import aws_subnet.private[0] subnet-abcd1234
+# ... continue for all resources
+
+# Or use import blocks (1.5+)
+# In .tf file:
+# import { to = aws_vpc.main, id = "vpc-12345678" }
+terraform plan -generate-config-out=imported.tf
+```
+
+### Issue: Configuration drift detected
+
+**Symptoms:**
+```
+Note: Objects have changed outside of Terraform
+```
+
+**Cause:** Manual changes in console or by other tools
+
+**Solutions:**
+
+```bash
+# View drift
+terraform plan -refresh-only
+
+# Accept drift (update state to match reality)
+terraform apply -refresh-only
+
+# Or fix drift (update resources to match config)
+terraform apply
+
+# Prevent drift with detective controls
+# - Enable CloudTrail
+# - Use AWS Config rules
+# - Regular terraform plan in CI
+```
+
+### Issue: Cannot migrate state between backends
+
+**Symptoms:**
+- `terraform init -migrate-state` fails
+- Backend authentication errors
+
+**Solutions:**
+
+```bash
+# Ensure credentials are configured
+export AWS_PROFILE=terraform
+# or
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+
+# Try migration again
+terraform init -migrate-state
+
+# If still failing, manual migration:
+# 1. Pull state from old backend
+terraform state pull > old-state.json
+
+# 2. Switch backend config
+# Edit backend.tf
+
+# 3. Initialize new backend
+terraform init -reconfigure
+
+# 4. Push state to new backend
+terraform state push old-state.json
+```
 
 ---
 
