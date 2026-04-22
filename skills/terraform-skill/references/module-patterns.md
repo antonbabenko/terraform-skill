@@ -24,8 +24,6 @@ This document provides detailed guidance on creating reusable, maintainable Terr
 
 ### Module Type Classification
 
-Terraform modules can be organized into three distinct types, each serving a specific purpose:
-
 | Type | When to Use | Scope | Example |
 |------|-------------|-------|---------|
 | **Resource Module** | Single logical group of connected resources | Tightly coupled resources that always work together | VPC + subnets, Security group + rules, IAM role + policies |
@@ -158,11 +156,7 @@ data.tf           # Optional: Data sources (if main.tf gets large)
 backend.tf        # ONLY at composition level (remote state config)
 ```
 
-**Why separate files?**
-- **Consistency:** Same structure across all modules
-- **Discoverability:** Know where to find specific types of configuration
-- **Maintainability:** Easier to navigate and modify
-- **Terraform Registry:** Required structure for publishing
+Required structure for Terraform Registry publishing; keeps navigation consistent across modules.
 
 ---
 
@@ -170,11 +164,7 @@ backend.tf        # ONLY at composition level (remote state config)
 
 ### 1. Smaller Scopes = Better Performance + Reduced Blast Radius
 
-**Benefits:**
-- Faster `terraform plan` and `terraform apply` operations
-- Isolated failures don't affect unrelated infrastructure
-- Easier to reason about changes
-- Parallel development by multiple teams
+Faster `plan`/`apply`, isolated failures, parallel team development.
 
 **Example:**
 
@@ -196,23 +186,10 @@ environments/prod/
 
 ### 2. Always Use Remote State
 
-**Why:**
-- **Prevents race conditions** with multiple developers
-- **Provides disaster recovery** (state versioning)
-- **Enables team collaboration** (shared access)
-- **Supports state locking** (prevents concurrent modifications)
+- ❌ local `terraform.tfstate` — no locking, no backup, no team access
+- ✅ remote backend — locking, versioning, encryption, audit log
 
-**Never:**
 ```hcl
-# ❌ BAD - Local state (default)
-# State stored in local terraform.tfstate file
-# Lost if computer crashes
-# Can't share with team
-```
-
-**Always:**
-```hcl
-# ✅ GOOD - Remote state
 terraform {
   backend "s3" {
     bucket       = "my-terraform-state"
@@ -244,10 +221,7 @@ terraform {
 - chains many `terraform_remote_state` reads, creating hidden cross-stack coupling
 - reads values that can drift at the provider level (use cloud data sources instead)
 
-**Why it works at real boundaries:**
-- Loose coupling between independently-owned stacks
-- Teams can release independently
-- Outputs from one stack become typed inputs to another
+At real boundaries, outputs from one stack become typed inputs to another — teams release independently without shared mutable state.
 
 **Example:**
 
@@ -281,11 +255,8 @@ module "ec2" {
 }
 ```
 
-**Best practices:**
-- Use remote state for cross-team dependencies
-- Document which outputs are consumed by other stacks
-- Version outputs (don't break downstream consumers)
-- Consider using data sources instead for provider-managed resources
+- ✅ document which outputs are consumed externally; version outputs, never break downstream consumers silently
+- ✅ prefer cloud data sources (`aws_vpc` by tag) over `terraform_remote_state` for provider-managed resources
 
 ### 4. Keep Resource Modules Simple
 
@@ -391,77 +362,46 @@ my-module/
     └── module_test.tftest.hcl  # Or .go
 ```
 
-### Why This Structure?
+### File Role
 
-- **README.md** - First thing users see, should explain module purpose
-- **LICENSE** - Legal terms for public modules (MIT or Apache 2.0)
-- **.pre-commit-config.yaml** - Automated validation before commits
-- **main.tf** - Primary resources, keep focused
-- **variables.tf** - All inputs in one place with descriptions
-- **outputs.tf** - All outputs documented
-- **versions.tf** - Lock provider versions for stability
-- **examples/** - Serve as both documentation and test fixtures
-- **tests/** - Automated testing
+- `README.md` — module purpose, first file users see
+- `LICENSE` — legal terms for public modules (MIT or Apache 2.0)
+- `.pre-commit-config.yaml` — automated validation before commits
+- `main.tf` — primary resources, keep focused
+- `variables.tf` — all inputs, with descriptions
+- `outputs.tf` — all outputs, with descriptions
+- `versions.tf` — pinned provider versions
+- `examples/` — docs + test fixtures
+- `tests/` — automated tests
 
 ### License Files
 
-For public modules, always include a LICENSE file:
-- **MIT License** - Simple, permissive (common for public modules)
-- **Apache 2.0** - Permissive with patent grant protection
-
-**Important:** Do NOT store LICENSE templates in this skill. Generate them during module creation using user preference.
-
-**When to include:**
-- ✅ Public modules (GitHub, Terraform Registry)
-- ✅ Open-source projects
-- ❌ Private internal modules (optional)
-- ❌ Environment-specific configurations
+- ✅ Public modules / open-source projects — include LICENSE (MIT = permissive; Apache 2.0 = permissive + patent grant)
+- ❌ Private internal modules / environment-specific configs — optional
+- ❌ Do NOT store LICENSE templates in this skill; generate them on demand from user preference
 
 ### Terraform vs OpenTofu Preference
 
-**Before generating any module or configuration:**
+HCL is identical; choice affects commands, README, CI invocations, binary references only. Ask before generating if not specified.
 
-1. **Ask the user:** "Will this be for Terraform or OpenTofu? (Both are supported equally)"
+**Inference signals (when a project already exists):**
+- `required_version` constraint or comments pinning the runtime
+- CI pipelines invoking `terraform` vs `tofu` explicitly
+- `.terraform.lock.hcl` provenance (check commit history / init script)
+- ❌ `.terraform/` working directory — both runtimes share it, not a differentiator
 
-2. **Use the preference throughout:**
-   - Command examples: `terraform` vs `tofu`
-   - README documentation
-   - CI/CD workflow templates
-   - Version constraints
-   - Binary references
+If signals are mixed, ask the user rather than guessing, or show both command variants in docs.
 
-3. **Document the choice:**
-   ```markdown
-   ## Requirements
+Document the chosen runtime in the module README:
 
-   | Name | Version |
-   |------|---------|
-   | [terraform/tofu] | >= 1.7.0 |
-   | aws | ~> 5.0 |
-   ```
+```markdown
+## Requirements
 
-4. **Example command variations:**
-   ```bash
-   # Terraform
-   terraform init
-   terraform test
-   terraform plan
-
-   # OpenTofu
-   tofu init
-   tofu test
-   tofu plan
-   ```
-
-**Note:** The choice is primarily about commands and documentation. The HCL code itself is identical.
-
-**Default behavior:**
-- If user doesn't specify: Ask explicitly
-- If project already exists, infer from reliable signals (both runtimes share the `.terraform/` working directory, so its presence is **not** a differentiator):
-  - `required_version` constraint in `terraform { ... }` (e.g., an OpenTofu-only floor like `>= 1.6.0` set by the team's policy, or comments pinning the runtime)
-  - CI/build invocations — whether pipelines call the `terraform` or `tofu` binary explicitly
-  - `.terraform.lock.hcl` provenance — the lockfile is written by whichever binary ran `init`; check commit history or the surrounding scripts that produced it
-- If still unclear: Ask the user explicitly rather than guessing, or default to showing both options in documentation
+| Name | Version |
+|------|---------|
+| [terraform/tofu] | >= 1.7.0 |
+| aws | ~> 5.0 |
+```
 
 ---
 
@@ -629,7 +569,7 @@ modules/webapp/
   variables.tf     # Configurable inputs
 ```
 
-**Why?** Root modules are environment-specific, reusable modules are generic.
+Root modules are environment-specific; reusable modules are generic.
 
 ### ✅ DO: Use Locals for Computed Values
 
@@ -664,7 +604,7 @@ module "vpc" {
 }
 ```
 
-**Why?** Prevents unexpected breaking changes.
+Prevents unexpected breaking changes from upstream major bumps.
 
 ---
 

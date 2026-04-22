@@ -211,10 +211,6 @@ Need to test Terraform/OpenTofu code?
 
 ### Terraform vs OpenTofu Comparison
 
-Both Terraform and OpenTofu are fully supported by this skill. The choice depends on your requirements:
-
-**Quick Decision Matrix:**
-
 | Factor | Terraform | OpenTofu |
 |--------|-----------|----------|
 | **Licensing** | Business Source License 1.1 (BUSL-1.1) | Mozilla Public License 2.0 (MPL 2.0) |
@@ -226,24 +222,11 @@ Both Terraform and OpenTofu are fully supported by this skill. The choice depend
 | **Enterprise Support** | HCP Terraform, Terraform Cloud | Multiple vendors |
 | **Migration Path** | N/A | Drop-in replacement for Terraform ≤1.5.x; feature-compatible fork thereafter with divergence on encryption, mock providers, provider functions, and other post-1.6 additions. Verify specific feature availability per version. |
 
-**When to choose Terraform:**
-- Using HashiCorp Terraform Cloud or HCP Terraform
-- Enterprise support contract with HashiCorp
-- Need absolute latest features first
+**Choose Terraform for:** HCP Terraform / Terraform Cloud, HashiCorp enterprise support, first access to latest features.
 
-**When to choose OpenTofu:**
-- Prefer open-source governance model
-- Want to avoid vendor lock-in concerns
-- Building on community-driven development
-- BUSL-1.1 license doesn't fit your use case
+**Choose OpenTofu for:** open-source governance, vendor-lock-in avoidance, BUSL-1.1 incompatibility.
 
-**For this skill:**
-- Commands are shown for both: `terraform` and `tofu`
-- Most patterns work identically, though differences exist (see release notes)
-- Version-specific features noted (1.6+, 1.7+, etc.)
-- **Note:** Since OpenTofu 1.6, the platforms have diverged with unique features
-
-**When creating modules, Claude will ask your preference** to generate appropriate commands and documentation.
+Since OpenTofu 1.6 the platforms have diverged — this skill notes version floors explicitly and shows both `terraform` and `tofu` commands. When creating modules, Claude asks preference to pick commands/docs.
 
 ---
 
@@ -530,30 +513,11 @@ tests/
 
 ### From Terraform → OpenTofu
 
-**Good news:** OpenTofu is a drop-in replacement for Terraform ≤1.5.x; a feature-compatible fork thereafter with divergence on encryption, mock providers, provider functions, and other post-1.6 additions. See the [Terraform vs OpenTofu Comparison](#terraform-vs-opentofu-comparison) above and verify specific feature availability per version.
+OpenTofu is a drop-in replacement for Terraform ≤1.5.x; a feature-compatible fork thereafter with divergence on encryption, mock providers, provider functions, and other post-1.6 additions. See the [Terraform vs OpenTofu Comparison](#terraform-vs-opentofu-comparison) and verify per-version feature availability.
 
-1. **No code changes needed for ≤1.5.x syntax**
-   - Terraform ≤1.5.x syntax works as-is
-   - Same provider ecosystem
-   - Compatible state files
-   - Post-1.6 features (encryption, mock providers, provider functions, etc.) may differ — verify per version
-
-2. **Update CI/CD:**
-   ```bash
-   # Replace
-   terraform init
-   terraform plan
-   terraform apply
-
-   # With
-   tofu init
-   tofu plan
-   tofu apply
-   ```
-
-3. **Update documentation:**
-   - README mentions OpenTofu compatibility
-   - CI/CD workflows use `tofu` command
+1. **HCL ≤1.5.x** — no code changes; providers and state files compatible. Verify post-1.6 features per version.
+2. **CI/CD** — swap `terraform` for `tofu` in `init`/`plan`/`apply` invocations.
+3. **Docs** — note OpenTofu compatibility in README; update workflow templates to the `tofu` binary.
 
 ---
 

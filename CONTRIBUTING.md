@@ -1,7 +1,6 @@
 # Contributing to Terraform Skill
 
-Thank you for your interest in improving terraform-skill! This document
-provides guidelines for contributors.
+Thanks for helping improve terraform-skill. Guidelines for contributors below.
 
 ## Quick Start
 
@@ -15,14 +14,14 @@ provides guidelines for contributors.
 
 **Good contributions:**
 
-- ✅ New Terraform/OpenTofu best practices based on community consensus
+- ✅ New Terraform/OpenTofu best practices with community consensus
 - ✅ Version-specific features for new Terraform/OpenTofu releases
 - ✅ Corrections to outdated or incorrect information
-- ✅ Improved examples or patterns
-- ✅ Better organization or clarity
+- ✅ Better examples or patterns
+- ✅ Sharper organization or clarity
 - ✅ Testing framework improvements
 
-**Not suitable for contributions:**
+**Not suitable:**
 
 - ❌ Personal preferences without community consensus
 - ❌ Provider-specific resource details (use Terraform MCP tools instead)
@@ -33,61 +32,86 @@ provides guidelines for contributors.
 
 ### Frontmatter Requirements
 
-**CRITICAL:** SKILL.md frontmatter must contain ONLY two fields:
+SKILL.md frontmatter must include two required fields. Other fields are optional and allowed.
 
-- `name` - Skill name (letters, numbers, hyphens only)
-- `description` - When to use this skill
+**Required:**
+
+- `name` — Skill name (letters, numbers, hyphens only)
+- `description` — When to use this skill (must start with "Use when", ≤1024 chars)
+
+**Optional (allowed):**
+
+- `license` — e.g. `Apache-2.0`
+- `metadata.author` — attribution
+- `metadata.version` — **auto-synced by the release workflow; never hand-edit**
+- Future additions the validate workflow accepts
+
+Current frontmatter:
 
 ```yaml
 ---
 name: terraform-skill
-description: Use when working with Terraform or OpenTofu - creating modules,
-  writing tests...
+description: >-
+  Use when writing, reviewing, or debugging Terraform/OpenTofu modules,
+  tests, CI, scans, or state ops — diagnoses failure mode (identity
+  churn, secrets, blast radius, CI drift, state corruption) with
+  version-aware guards.
+license: Apache-2.0
+metadata:
+  author: Anton Babenko
+  version: X.Y.Z
 ---
 ```
 
-**Do NOT add:**
-- ❌ `author` field (put in README.md)
-- ❌ `version` field (managed by release workflow)
-- ❌ `license` field (put in README.md and LICENSE)
-- ❌ Any other custom fields
-
-**Why:** Per official skill standards, only `name` and `description` are
-supported. Extra fields waste tokens.
+The validate workflow (`.github/workflows/validate.yml`) rejects the PR only if `name` or `description` is missing, if `name` contains invalid characters, or if `description` exceeds 1024 characters. Optional fields are logged but not blocked.
 
 ### Description Best Practices
 
-**Format:** Start with "Use when..." and list specific triggers
+Start with "Use when..." and list specific triggers.
 
 **Good example:**
 
 ```yaml
 description: >-
-  Use when working with Terraform or OpenTofu - creating modules, writing
-  tests (native test framework, Terratest), setting up CI/CD pipelines,
-  reviewing configurations, choosing between testing approaches, debugging
-  state issues, implementing security scanning (trivy, checkov), or making
-  infrastructure-as-code architecture decisions
+  Use when writing, reviewing, or debugging Terraform/OpenTofu modules,
+  tests, CI, scans, or state ops — diagnoses failure mode (identity
+  churn, secrets, blast radius, CI drift, state corruption) with
+  version-aware guards.
 ```
 
 **Bad example:**
+
 ```yaml
 description: Comprehensive skill for Terraform development covering testing, modules, CI/CD, and production patterns
 ```
 
-**Why:** Description must focus on WHEN to use (triggers/symptoms), not WHAT it does (workflow summary). See plan file and writing-skills documentation for rationale.
+The description must focus on WHEN to use (triggers, symptoms), not WHAT the skill does. See writing-skills documentation for rationale.
 
 ### Token Efficiency
 
-**SKILL.md Target:** <1,500 words
+**SKILL.md target:** <300 lines (currently 277).
+
+**Reference subsection target:** <400 tokens (~1,600 chars). Split or compress anything larger.
 
 **Techniques:**
-- Use progressive disclosure (move details to references/*.md)
-- Prefer tables over prose
-- Compress link sections (pipe-separated)
+
+- Push detail into `references/*.md` (progressive disclosure)
+- Tables over prose
+- Pipe-separated link lists
 - Reference other files instead of repeating content
 
-**Current stats:** ~1,400 words, ~280 lines
+### LLM Consumption Rules
+
+Every SKILL.md or `references/*.md` addition must follow the rules in [CLAUDE.md §LLM Consumption Rules](CLAUDE.md#llm-consumption-rules-enforce-in-every-pr-review):
+
+- Decision table before playbook
+- No before/after diffs that restate the phase steps
+- No "Why this matters" / "Note" / "Keep in mind" paragraphs — convert to ❌/✅
+- Retrieval-first ordering within each section
+- Preserve anchors that SKILL.md links to
+- Subsections under ~400 tokens
+
+Reviewers reject PRs that violate these.
 
 ### File Organization
 
@@ -95,13 +119,15 @@ description: Comprehensive skill for Terraform development covering testing, mod
 terraform-skill/
 ├── skills/
 │   └── terraform-skill/            # Autodiscovered by Claude Code plugin system
-│       ├── SKILL.md                # Core skill (<500 lines guideline)
+│       ├── SKILL.md                # Core skill (<300 lines)
 │       └── references/             # Reference files (progressive disclosure)
-│           ├── testing-frameworks.md
-│           ├── module-patterns.md
 │           ├── ci-cd-workflows.md
+│           ├── code-patterns.md
+│           ├── module-patterns.md
+│           ├── quick-reference.md
 │           ├── security-compliance.md
-│           └── quick-reference.md
+│           ├── state-management.md
+│           └── testing-frameworks.md
 ├── tests/                          # TDD testing framework
 │   ├── baseline-scenarios.md
 │   ├── compliance-verification.md
@@ -115,21 +141,18 @@ terraform-skill/
 
 ### The Iron Law
 
-**NO CHANGES WITHOUT TESTING FIRST**
+**NO CHANGES WITHOUT TESTING FIRST.**
 
-This applies to:
+Applies to:
+
 - ✅ New content additions
 - ✅ Edits to existing content
 - ✅ Reorganization or refactoring
 - ✅ "Simple" documentation updates
 
-**No exceptions.**
+No exceptions. Without a baseline, a change cannot prove it improves agent behavior. Per writing-skills, this is TDD for documentation:
 
-### Why This Matters
-
-Without testing, we don't know if changes actually improve agent behavior. Per official skill standards (writing-skills), this is TDD for documentation:
-
-- **RED:** Run scenarios WITHOUT your changes (baseline)
+- **RED:** Run scenarios without your changes (baseline)
 - **GREEN:** Add changes, verify behavior improves
 - **REFACTOR:** Close loopholes, re-test
 
@@ -139,9 +162,9 @@ Without testing, we don't know if changes actually improve agent behavior. Per o
 
 Review `tests/baseline-scenarios.md`. Which scenarios does your change affect?
 
-**Example:** Adding security scanning guidance → affects Scenario 3
+Example: adding security scanning guidance → affects Scenario 3.
 
-#### 2. Run Baseline (WITHOUT Your Changes)
+#### 2. Run Baseline (Without Your Changes)
 
 ```bash
 # Disable skill temporarily
@@ -153,9 +176,9 @@ Review `tests/baseline-scenarios.md`. Which scenarios does your change affect?
 
 #### 3. Apply Your Changes
 
-Make your edits to SKILL.md or reference files.
+Edit SKILL.md or reference files.
 
-#### 4. Run Compliance Test (WITH Your Changes)
+#### 4. Run Compliance Test (With Your Changes)
 
 ```bash
 # Re-enable skill
@@ -168,26 +191,28 @@ Make your edits to SKILL.md or reference files.
 #### 5. Verify Improvement
 
 Compare baseline vs compliance:
-- Does agent now follow your guidance?
+
+- Does the agent now follow your guidance?
 - Are patterns applied proactively?
-- No new rationalizations introduced?
+- Any new rationalizations introduced?
 
 #### 6. Document in PR
 
-Include in PR description:
-- Which scenarios tested
-- Baseline behavior (what agent did without change)
-- Compliance behavior (what agent does with change)
-- Evidence that change works
+Include in the PR description:
+
+- Which scenarios you tested
+- Baseline behavior (what the agent did without the change)
+- Compliance behavior (what the agent does with the change)
+- Evidence the change works
 
 ### Testing Checklist
 
-For each PR, include this checklist:
+Include this checklist on every PR:
 
 - [ ] Identified affected scenarios from tests/baseline-scenarios.md
-- [ ] Ran baseline WITHOUT changes (documented)
+- [ ] Ran baseline without changes (documented)
 - [ ] Applied changes
-- [ ] Ran compliance WITH changes (documented)
+- [ ] Ran compliance with changes (documented)
 - [ ] Verified behavior improvement
 - [ ] No new rationalizations discovered (or documented in rationalization-table.md)
 - [ ] Re-tested if rationalizations found
@@ -197,49 +222,56 @@ For each PR, include this checklist:
 ### Writing Style
 
 **Imperative voice:**
-✅ "Use underscores in variable names"
-❌ "You should consider using underscores"
+
+- ✅ "Use underscores in variable names"
+- ❌ "You should consider using underscores"
 
 **Scannable format:**
+
 - Tables for comparisons
 - ✅ DO vs ❌ DON'T side-by-side
 - Code blocks with inline comments
 - Clear section headers
 
 **Version-specific markers:**
+
 ```markdown
 **Native Tests** (Terraform 1.6+, OpenTofu 1.6+)
 ```
 
 ### Code Examples
 
-**One excellent example beats many mediocre ones**
+One excellent example beats many mediocre ones.
 
-**Good example:**
+**Good:**
+
 - Complete and runnable
-- Well-commented explaining WHY
-- From real scenario
-- Shows pattern clearly
+- Commented to explain WHY
+- From a real scenario
+- Shows the pattern clearly
 - Ready to adapt
 
 **Avoid:**
+
 - Multiple language implementations
 - Fill-in-the-blank templates
 - Contrived examples
 
 ### Decision Frameworks
 
-**Include WHEN information:**
+Include WHEN information:
+
 - When to use approach A vs B
 - What factors influence the decision
-- Tradeoffs and considerations
+- Tradeoffs
 
 **Use tables:**
+
 ```markdown
 | Your Situation | Recommended Approach |
 |----------------|---------------------|
 | Terraform 1.6+, simple logic | Native tests |
-| Pre-1.6, Go expertise | Terratest |
+| Complex integration or multi-cloud | Terratest |
 ```
 
 ## Commit Message Format
@@ -294,33 +326,24 @@ git commit -m "docs: improve testing strategy documentation"
 git commit -m "chore: update workflow dependencies"
 ```
 
-### Why This Matters
-
-Conventional commits enable:
-- **Automatic versioning** - Commit type determines version bump
-- **Generated changelogs** - Changes grouped by type (features, fixes, etc.)
-- **Release automation** - Releases created on merge to master
-
-When you merge a PR, the release workflow analyzes all commits since the last release and:
-1. Calculates the appropriate version bump
-2. Updates version in marketplace.json (marketplace, plugin, and git ref)
-3. Generates changelog entry
-4. Creates GitHub release
+Commit type determines the version bump, the changelog group, and whether a release is cut on merge to master. The release workflow updates the version in marketplace.json (marketplace root and plugin entry) and in SKILL.md frontmatter.
 
 ## Submitting Changes
 
 ### Pull Request Process
 
-1. **Create feature branch** from `master`
+1. **Create a feature branch** from `master`:
+
    ```bash
    git checkout -b feature/improve-testing-guidance
    ```
 
-2. **Make changes** following standards above
+2. **Make changes** following the standards above
 
 3. **Test changes** (see Testing Requirements)
 
 4. **Commit with conventional commit format**
+
    ```bash
    git commit -m "feat: add native test mocking guidance for 1.7+"
    git commit -m "fix: correct security scanning tool recommendations"
@@ -331,7 +354,8 @@ When you merge a PR, the release workflow analyzes all commits since the last re
 
 ### PR Template
 
-Use the template in `.github/PULL_REQUEST_TEMPLATE.md` - it includes:
+Use `.github/PULL_REQUEST_TEMPLATE.md`. It covers:
+
 - Testing checklist
 - Standards compliance verification
 - Change description
@@ -339,28 +363,30 @@ Use the template in `.github/PULL_REQUEST_TEMPLATE.md` - it includes:
 
 ### Review Criteria
 
-PRs will be reviewed for:
-1. **Standards compliance** - Frontmatter, description format
-2. **Testing evidence** - Baseline vs compliance documented
-3. **Token efficiency** - Not adding unnecessary content
-4. **Accuracy** - Technically correct and current
-5. **Quality** - Clear, scannable, well-organized
+PRs are reviewed for:
+
+1. **Standards compliance** — frontmatter, description format
+2. **Testing evidence** — baseline vs compliance documented
+3. **Token efficiency** — no unnecessary content added
+4. **Accuracy** — technically correct and current
+5. **Quality** — clear, scannable, well-organized
 
 ## Release Process
 
-Releases are **fully automated** based on conventional commits:
+Releases are automated from conventional commits:
 
 1. PR merged to `master`
-2. Automated workflow analyzes commits since last release
-3. Calculates version bump (major/minor/patch)
-4. Workflow updates version in:
+2. Workflow analyzes commits since the last release
+3. Workflow calculates the version bump (major/minor/patch)
+4. Workflow updates:
    - `.claude-plugin/marketplace.json` (marketplace version, plugin version, git ref)
+   - `skills/terraform-skill/SKILL.md` frontmatter (`metadata.version`)
    - `CHANGELOG.md` (generated from commits)
-5. Creates git tag and GitHub Release
+5. Workflow creates the git tag and GitHub Release
 
-**Contributors don't need to manage versions** - just use conventional commits in your PRs.
+Contributors don't manage versions — conventional commits in your PRs are enough.
 
-For details, see the [Releases section in README.md](README.md#releases).
+See the [Releases section in README.md](README.md#releases) for details.
 
 ## Questions?
 
@@ -371,15 +397,11 @@ For details, see the [Releases section in README.md](README.md#releases).
 ## Additional Resources
 
 **For contributors:**
-- [CLAUDE.md](CLAUDE.md) - Detailed development guidelines and architecture
-- [tests/baseline-scenarios.md](tests/baseline-scenarios.md) - Testing scenarios
+
+- [CLAUDE.md](CLAUDE.md) — development guidelines, architecture, and LLM Consumption Rules
+- [tests/baseline-scenarios.md](tests/baseline-scenarios.md) — testing scenarios
 
 **Skill standards:**
+
 - [Claude Code Skills Documentation](https://docs.claude.ai/docs/agent-skills)
 - writing-skills (reference skill for skill development)
-
----
-
-**Thank you for helping make terraform-skill better!** 🎉
-
-Quality contributions that improve agent behavior are always welcome.

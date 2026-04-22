@@ -17,8 +17,8 @@ terraform-skill/
 ├── .claude-plugin/marketplace.json  # Plugin metadata (version synced automatically)
 ├── skills/
 │   └── terraform-skill/             # Skill autodiscovered by Claude Code plugin system
-│       ├── SKILL.md                 # Core skill file (~524 lines, ~4.4K tokens)
-│       └── references/              # Reference files loaded on demand (~26K tokens total)
+│       ├── SKILL.md                 # Core skill file (~277 lines)
+│       └── references/              # Reference files loaded on demand
 │           ├── ci-cd-workflows.md
 │           ├── code-patterns.md
 │           ├── module-patterns.md
@@ -37,14 +37,14 @@ terraform-skill/
 
 ## Development Workflow
 
-**This is documentation, not code.** There is no build step, no test suite to run, no compilation.
+**This is documentation, not code.** No build, no compiled tests.
 
 ### Validation
 
 CI runs automatically on PRs touching `SKILL.md`, `references/**/*.md`, or `.claude-plugin/**`. To check locally:
 
 ```bash
-# Check SKILL.md line count (guideline: <500 lines)
+# Check SKILL.md line count (target: <300 lines per LLM Consumption Rules)
 wc -l skills/terraform-skill/SKILL.md
 
 # Validate YAML frontmatter (requires pyyaml)
@@ -67,12 +67,12 @@ grep -oP '\[.*?\]\(references/.*?\.md.*?\)' SKILL.md references/*.md | \
 
 ### Testing Changes
 
-No automated test suite. The validation approach is:
+No automated suite. Manual flow:
 1. Edit `SKILL.md` or a `references/*.md` file
-2. Load the skill in Claude Code (reload skills)
-3. Test with real Terraform queries (e.g., "Create a Terraform module with tests")
-4. Verify Claude applies the new patterns correctly
-5. Check `tests/baseline-scenarios.md` for regression scenarios
+2. Reload the skill in Claude Code
+3. Run real Terraform queries (e.g., "Create a Terraform module with tests")
+4. Confirm Claude applies the new patterns
+5. Re-check `tests/baseline-scenarios.md` for regressions
 
 ## Commit Conventions & Releases
 
@@ -98,7 +98,7 @@ The release workflow automatically:
 
 ### Plugin Structure
 
-The skill is located at `skills/terraform-skill/SKILL.md`. Claude Code's plugin system autodiscovers skills in the `skills/<name>/SKILL.md` pattern per the [plugins reference](https://code.claude.com/docs/en/plugins-reference). Reference files live alongside the skill at `skills/terraform-skill/references/`, keeping relative paths intact.
+The skill lives at `skills/terraform-skill/SKILL.md` — Claude Code autodiscovers any `skills/<name>/SKILL.md` (see [plugins reference](https://code.claude.com/docs/en/plugins-reference)). Reference files sit next to it under `skills/terraform-skill/references/` so relative links keep working.
 
 ### YAML Frontmatter (required fields)
 
@@ -115,9 +115,9 @@ metadata:
 
 ### Progressive Disclosure Pattern
 
-SKILL.md is the entry point (~4.4K tokens). Reference files provide depth on demand. Cross-links use relative paths: `[Testing Guide](references/testing-frameworks.md)`.
+SKILL.md is the entry point. Reference files load on demand. Cross-links use relative paths: `[Testing Guide](references/testing-frameworks.md)`.
 
-When adding content, ask: **Does this belong in SKILL.md (decision frameworks, key patterns) or a reference file (detailed examples, templates)?**
+When adding content, ask: **decision framework or key pattern → SKILL.md; detailed example or template → reference file.**
 
 ### Content Standards
 
@@ -125,7 +125,7 @@ When adding content, ask: **Does this belong in SKILL.md (decision frameworks, k
 - **Scannable format:** tables > bullets > prose
 - **✅ DO / ❌ DON'T** side-by-side for non-obvious patterns
 - **Version-specific features** clearly marked (e.g., `Terraform 1.6+`)
-- **Token budget:** SKILL.md target <500 lines; current 524 is justified but don't grow further
+- **Token budget:** SKILL.md target <300 lines (see LLM Consumption Rules); currently ~277
 
 ### LLM Consumption Rules (enforce in every PR review)
 
@@ -157,7 +157,7 @@ These rules tune content for the **primary reader: an LLM retrieving facts to an
 
 ## PR Requirements
 
-PRs must include testing evidence showing baseline behavior (before) vs. compliance behavior (after) for affected scenarios from `tests/baseline-scenarios.md`. See `.github/PULL_REQUEST_TEMPLATE.md` for the full checklist.
+PRs must include before/after evidence for affected scenarios in `tests/baseline-scenarios.md`. See `.github/PULL_REQUEST_TEMPLATE.md` for the full checklist.
 
 ## What Belongs Where
 
