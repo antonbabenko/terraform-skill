@@ -370,7 +370,7 @@ terraform {
 ```yaml
 # GitHub Actions
 - name: Cache Terraform Plugins
-  uses: actions/cache@v3
+  uses: actions/cache@v4
   with:
     path: |
       ~/.terraform.d/plugin-cache

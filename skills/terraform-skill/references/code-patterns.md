@@ -1058,6 +1058,7 @@ Common model mistakes when generating HCL. Correct these before returning code:
 - uses `each.value` inside a `dynamic` block intending the outer iterator — shadowed by the inner block name; rename with `iterator = ...`
 - emits hardcoded cloud resource IDs (`vpc-0abc...`, ARNs) instead of using `data` sources to look them up at plan time
 - pattern-matches ARNs from training data (e.g. guesses `arn:aws:iam::123456789012:role/admin`) instead of passing the ARN as an input variable
+- iterates `dynamic` blocks over `toset(...)` of maps/objects — the set's undefined ordering causes non-deterministic block ordering in the plan diff; sort the list or use a map keyed by a stable field
 
 ---
 
