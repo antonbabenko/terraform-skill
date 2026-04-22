@@ -1690,116 +1690,6 @@ terraform apply
 
 ## State Best Practices Summary
 
-### DO vs DON'T Patterns
-
-#### Remote Backends
-
-✅ **DO:**
-```hcl
-# Use remote backend with locking
-terraform {
-  backend "s3" {
-    bucket         = "my-terraform-state"
-    key            = "prod/vpc/terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-state-lock"
-  }
-}
-```
-
-❌ **DON'T:**
-```hcl
-# Local backend in production
-terraform {
-  backend "local" {
-    path = "terraform.tfstate"  # ❌ No locking, no backup
-  }
-}
-```
-
-#### State Organization
-
-✅ **DO:**
-```
-# Separate state per component
-prod/
-├── networking/terraform.tfstate
-├── compute/terraform.tfstate
-└── data/terraform.tfstate
-```
-
-❌ **DON'T:**
-```
-# Everything in one giant state
-prod/terraform.tfstate  # ❌ 5000 resources, slow, risky
-```
-
-#### Sensitive Data
-
-✅ **DO:**
-```hcl
-# Reference secrets externally
-data "aws_secretsmanager_secret_version" "db_password" {
-  secret_id = "prod/db/password"
-}
-
-resource "aws_db_instance" "main" {
-  password = data.aws_secretsmanager_secret_version.db_password.secret_string
-}
-```
-
-❌ **DON'T:**
-```hcl
-# Hardcoded secrets
-variable "db_password" {
-  default = "password123"  # ❌ In state, in VCS
-}
-```
-
-#### State Locking
-
-✅ **DO:**
-```bash
-# Let Terraform handle locking
-terraform apply
-
-# If operation crashed, verify before force-unlock
-ps aux | grep terraform  # Check if running
-terraform force-unlock LOCK_ID  # Only if confirmed safe
-```
-
-❌ **DON'T:**
-```bash
-# Force-unlock without checking
-terraform force-unlock LOCK_ID  # ❌ Might cause corruption
-```
-
-#### State Access
-
-✅ **DO:**
-```json
-// Minimal IAM permissions
-{
-  "Effect": "Allow",
-  "Action": [
-    "s3:GetObject",
-    "s3:PutObject"
-  ],
-  "Resource": "arn:aws:s3:::state/prod/*"
-}
-```
-
-❌ **DON'T:**
-```json
-// Wildcard permissions
-{
-  "Effect": "Allow",
-  "Action": "s3:*",  // ❌ Too permissive
-  "Resource": "*"
-}
-```
-
 ### Decision Matrix: State Organization
 
 | Scenario | Recommendation | Reasoning |
@@ -1846,63 +1736,30 @@ rm .terraform/terraform.tfstate.lock.info  # ❌ Dangerous
 - High blast radius
 ✅ **Instead:** Split by component/team/environment
 
+### LLM Mistake Checklist — State Management
+
+Common model mistakes to correct before returning state-related recommendations:
+
+- recommends local state in team/production contexts
+- proposes one monolithic root state for "convenience"
+- suggests `rm .terraform.tfstate.lock.info` or `force-unlock` without investigating why the lock exists
+- edits `terraform.tfstate` manually instead of using `terraform state mv/rm/import`
+- commits `*.tfstate` to git
+- mixes prod and non-prod in the same backend key
+- recommends workspace-only isolation as a substitute for backend-level IAM separation
+- writes DynamoDB-lock configuration on Terraform 1.11+ instead of using `use_lockfile = true` on the S3 backend
+- reads via `terraform_remote_state` within a single team's stack instead of using module outputs (see [module-patterns.md](module-patterns.md#3-use-terraform_remote_state-sparingly--only-at-true-ownership-boundaries))
+- omits the rollback/recovery note for destructive state operations
+
 ### State Management Checklist
 
-**Initial Setup:**
-- [ ] Remote backend configured
-- [ ] State locking enabled
-- [ ] Encryption at rest enabled
-- [ ] Access control (IAM) configured
-- [ ] Versioning/backup enabled
-- [ ] State file audit logging enabled
+**Setup:** remote backend, locking, encryption at rest, IAM-scoped access, versioning/backup, audit logging.
 
-**Per Environment:**
-- [ ] Separate state per environment
-- [ ] Environment-specific IAM roles
-- [ ] State key follows naming convention
-- [ ] Backend config documented
-- [ ] Disaster recovery plan documented
+**Per environment:** separate backend key, scoped IAM role, documented key naming convention, documented DR plan.
 
-**Ongoing Maintenance:**
-- [ ] Regular drift detection (`terraform plan`)
-- [ ] State backups tested quarterly
-- [ ] Unused resources removed from state
-- [ ] State organization reviewed (split if needed)
-- [ ] Lock timeout policy defined
-- [ ] Force-unlock process documented
+**Ongoing:** scheduled drift detection (`plan -detailed-exitcode`), tested state restore, review when a state exceeds ~500 resources, documented force-unlock policy.
 
-**Security:**
-- [ ] Secrets not in variables/state (use write-only or external)
-- [ ] State access restricted by IAM
-- [ ] TLS enforced for state access
-- [ ] State file audit log reviewed
-- [ ] Encryption keys rotated regularly
-
-**Team Collaboration:**
-- [ ] State organization documented
-- [ ] Cross-state dependencies mapped
-- [ ] `terraform_remote_state` usage documented
-- [ ] State ownership assigned
-- [ ] Force-unlock policy communicated
-
----
-
-## Resources
-
-### Official Documentation
-- [Terraform State](https://www.terraform.io/docs/language/state/index.html)
-- [Backend Configuration](https://www.terraform.io/docs/language/settings/backends/configuration.html)
-- [State Locking](https://www.terraform.io/docs/language/state/locking.html)
-- [S3 Backend](https://www.terraform.io/docs/language/settings/backends/s3.html)
-- [Remote State Data Source](https://www.terraform.io/docs/language/state/remote-state-data.html)
-
-### Tools
-- [Terraform State Manager (tfmask)](https://github.com/cloudposse/tfmask) - Mask sensitive output
-- [Terragrunt](https://terragrunt.gruntwork.io/) - DRY backend configuration
-- [Atlantis](https://www.runatlantis.io/) - Terraform automation with locking
-
-### Best Practices Guides
-- [Gruntwork - How to Manage Terraform State](https://blog.gruntwork.io/how-to-manage-terraform-state-28f5697e68fa)
+**Security:** no secrets in variables/state (use `write_only` or external lookup), TLS enforced, audit log reviewed, encryption keys rotated.
 
 ---
 
