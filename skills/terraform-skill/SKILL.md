@@ -1,6 +1,6 @@
 ---
 name: terraform-skill
-description: Use when working with Terraform or OpenTofu - creating modules, writing tests (native test framework, Terratest), setting up CI/CD pipelines, reviewing configurations, choosing between testing approaches, debugging state issues, implementing security scanning (trivy, checkov), or making infrastructure-as-code architecture decisions
+description: Use when working with Terraform or OpenTofu - creating modules, writing tests (native test framework, Terratest), setting up CI/CD pipelines, reviewing configurations, choosing between testing approaches, debugging state issues, managing remote state backends, implementing security scanning (trivy, checkov), or making infrastructure-as-code architecture decisions
 license: Apache-2.0
 metadata:
   author: Anton Babenko
@@ -21,6 +21,8 @@ Comprehensive Terraform and OpenTofu guidance covering testing, modules, CI/CD, 
 - Implementing CI/CD for infrastructure-as-code
 - Reviewing or refactoring existing Terraform/OpenTofu projects
 - Choosing between module patterns or state management approaches
+- Configuring remote state backends and state locking
+- Migrating state between backends or troubleshooting state issues
 
 **Don't use this skill for:**
 - Basic Terraform/OpenTofu syntax questions (Claude knows this)
@@ -396,6 +398,85 @@ checkov -d .
 **For detailed security guidance, see:**
 - **[Security & Compliance Guide](references/security-compliance.md)** - Trivy/Checkov integration, secrets management, state file security, compliance testing
 
+## State Management
+
+### Critical Principle: Never Use Local State in Production
+
+**Always use remote backends for:**
+- ✅ Team collaboration with automatic locking
+- ✅ State versioning and backup
+- ✅ Encryption at rest and in transit
+- ✅ Audit logging
+
+### Remote Backend Quick Setup
+
+**AWS S3 (Recommended):**
+
+*Terraform 1.11+ (Recommended):*
+```hcl
+# backend.tf - Native S3 locking, no DynamoDB needed
+terraform {
+  backend "s3" {
+    bucket       = "my-terraform-state"
+    key          = "prod/vpc/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lock_file = true  # Native S3 locking
+  }
+}
+```
+
+*Pre-1.11 or Legacy DynamoDB locking:*
+```hcl
+# backend.tf
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state"
+    key            = "prod/vpc/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
+  }
+}
+```
+
+**Other backends:**
+- **Azure Storage** - Built-in blob lease locking
+- **Google Cloud Storage** - Built-in object metadata locking
+- **Terraform Cloud** - Fully managed with remote execution
+
+### State Organization Patterns
+
+| Pattern | Use When | Example Path |
+|---------|----------|--------------|
+| **Per Environment** | Different teams per env | `prod/terraform.tfstate`, `staging/terraform.tfstate` |
+| **Per Component** | Independent lifecycles | `prod/vpc/`, `prod/eks/`, `prod/rds/` |
+| **Hybrid** (Recommended) | Both benefits | `prod/networking/`, `prod/compute/`, `staging/networking/` |
+
+**Decision guide:**
+- **Split state when:** Different teams, different update frequencies, >500 resources
+- **Combine state when:** Tightly coupled resources, <100 resources, same lifecycle
+
+### State Security Best Practices
+
+✅ **DO:**
+- Use encryption at rest (KMS)
+- Enable state versioning
+- Restrict IAM access per environment
+- Use write-only arguments for secrets (Terraform 1.11+)
+- Reference secrets from external sources (Secrets Manager)
+- Enable audit logging
+
+❌ **DON'T:**
+- Store secrets in variables
+- Use local state for teams/production
+- Share state files via git
+- Force-unlock without verification
+- Skip backups
+
+**For comprehensive state management guidance, see:**
+- **[State Management Guide](references/state-management.md)** - Remote backends, locking, security, migration, multi-team patterns, recovery strategies
+
 ## Version Management
 
 ### Version Constraint Syntax
@@ -445,6 +526,7 @@ terraform plan
 | Provider functions | 1.8+ | Provider-specific data transformation |
 | Cross-variable validation | 1.9+ | Validate relationships between variables |
 | Write-only arguments | 1.11+ | Secrets never stored in state |
+| S3 native lock-file | 1.11+ | State locking without DynamoDB |
 
 ### Quick Examples
 
@@ -505,6 +587,7 @@ This skill uses **progressive disclosure** - essential information is in this ma
 - **[Module Patterns](references/module-patterns.md)** - Module structure, variable/output best practices, ✅ DO vs ❌ DON'T patterns
 - **[CI/CD Workflows](references/ci-cd-workflows.md)** - GitHub Actions, GitLab CI templates, cost optimization, automated cleanup
 - **[Security & Compliance](references/security-compliance.md)** - Trivy/Checkov integration, secrets management, compliance testing
+- **[State Management](references/state-management.md)** - Remote backends, state locking, security, migration, multi-team patterns, recovery
 - **[Quick Reference](references/quick-reference.md)** - Command cheat sheets, decision flowcharts, troubleshooting guide
 
 **How to use:** When you need detailed information on a topic, reference the appropriate guide. Claude will load it on demand to provide comprehensive guidance.

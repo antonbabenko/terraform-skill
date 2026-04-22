@@ -24,6 +24,7 @@ terraform-skill/
 │           ├── module-patterns.md
 │           ├── quick-reference.md
 │           ├── security-compliance.md
+│           ├── state-management.md
 │           └── testing-frameworks.md
 ├── tests/                           # Baseline scenarios and rationalization tracking
 │   ├── baseline-scenarios.md
