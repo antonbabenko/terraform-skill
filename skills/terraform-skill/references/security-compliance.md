@@ -26,8 +26,9 @@ This document provides security hardening guidance and compliance automation str
 trivy config .
 checkov -d .
 
-# Compliance testing
-terraform-compliance -f compliance/ -p tfplan.json
+# Compliance testing (policy-as-code against a terraform plan JSON)
+terraform plan -out=tfplan && terraform show -json tfplan > tfplan.json
+conftest test tfplan.json --policy policy/
 ```
 
 ### Trivy Integration

@@ -97,10 +97,10 @@ run "create_bucket" {
 }
 
 run "verify_encryption" {
-  command = apply  # Set-type `rule` block must be materialized before indexing
+  command = apply  # `rule` is a set; use `one(...)` to extract the singleton
 
   assert {
-    condition     = aws_s3_bucket_server_side_encryption_configuration.main.rule[0].apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
+    condition     = one(aws_s3_bucket_server_side_encryption_configuration.main.rule).apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
     error_message = "Bucket must use AES256 encryption"
   }
 }

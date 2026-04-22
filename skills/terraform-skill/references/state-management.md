@@ -39,7 +39,7 @@ This document provides detailed guidance on state management, from remote backen
 
 ### AWS S3 Backend (Recommended)
 
-#### S3 with Native Lock-File (Terraform 1.11+, Recommended)
+#### S3 with Native Lock-File (Terraform 1.10+, Recommended)
 
 **Simplest setup - no DynamoDB required:**
 
@@ -51,7 +51,7 @@ terraform {
     key          = "prod/vpc/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
-    use_lockfile = true  # Native S3 locking (Terraform 1.11+)
+    use_lockfile = true  # Native S3 locking (Terraform 1.10+)
     
     # Optional but recommended
     kms_key_id = "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
@@ -65,7 +65,7 @@ terraform {
 - ✅ Simpler infrastructure (one less resource to manage)
 - ✅ Lock files stored alongside state in same bucket
 
-#### S3 with DynamoDB Locking (Pre-1.11 or Legacy)
+#### S3 with DynamoDB Locking (Pre-1.10 or Legacy)
 
 **Complete setup with DynamoDB:**
 
@@ -86,13 +86,13 @@ terraform {
 ```
 
 **When to use DynamoDB locking:**
-- Terraform versions < 1.11
+- Terraform versions < 1.10
 - Existing infrastructure already using DynamoDB
 - Need DynamoDB for other purposes
 
 **Migration note:** Existing setups using DynamoDB will continue to work. The `use_lockfile` option is opt-in.
 
-**Backend infrastructure setup (Terraform 1.11+ with lock-file):**
+**Backend infrastructure setup (Terraform 1.10+ with lock-file):**
 
 ```hcl
 # bootstrap/main.tf - Run this ONCE to create state backend
@@ -160,7 +160,7 @@ resource "aws_kms_alias" "terraform_state" {
 }
 ```
 
-**Backend infrastructure setup (Pre-1.11 with DynamoDB):**
+**Backend infrastructure setup (Pre-1.10 with DynamoDB):**
 
 ```hcl
 # If using DynamoDB locking, add this resource to the above configuration:
@@ -418,8 +418,8 @@ Result: Operations are serialized
 
 | Backend | Locking | Lock Mechanism |
 |---------|---------|----------------|
-| **S3** (Terraform 1.11+) | ✅ Native | Lock files |
-| **S3** (Pre-1.11) | ✅ With DynamoDB | DynamoDB table |
+| **S3** (Terraform 1.10+) | ✅ Native | Lock files |
+| **S3** (Pre-1.10) | ✅ With DynamoDB | DynamoDB table |
 | **Azure Storage** | ✅ Native | Blob lease |
 | **GCS** | ✅ Native | Object metadata |
 | **Terraform Cloud** | ✅ Native | Built-in |
@@ -427,7 +427,7 @@ Result: Operations are serialized
 | **Postgres** | ✅ Native | Row locking |
 | **Local** | ❌ None | N/A |
 
-### S3 Native Lock-File (Terraform 1.11+)
+### S3 Native Lock-File (Terraform 1.10+)
 
 **How it works:**
 - Uses regular S3 objects as lock files
@@ -456,7 +456,7 @@ terraform {
 
 **Migration from DynamoDB:** Set both `dynamodb_table` and `use_lockfile = true` during Terraform 1.10+ migration — locks acquire via both mechanisms. Once every workflow runs on 1.10+, remove `dynamodb_table`.
 
-### DynamoDB Locking for S3 (Pre-1.11 or Legacy)
+### DynamoDB Locking for S3 (Pre-1.10 or Legacy)
 
 **Lock table attributes:**
 - `LockID` (String, Hash Key) - Must be exactly "LockID"
@@ -473,11 +473,9 @@ terraform plan
 # Another user attempts operation
 terraform apply
 # Sees: Error acquiring the state lock
-# Default behavior: Terraform retries with backoff until the lock is released
-# or roughly 9 minutes elapse, then fails.
-# Override with -lock-timeout=<duration>, e.g.:
+# Default: `-lock-timeout=0s` — fail immediately on lock contention.
+# Set `-lock-timeout=<duration>` (e.g. `5m`) to retry with backoff for the specified window.
 #   terraform apply -lock-timeout=5m
-# Use -lock-timeout=0s to fail immediately without retry.
 ```
 
 **View current locks:**
@@ -1793,7 +1791,7 @@ Common model mistakes to correct before returning state-related recommendations:
 - commits `*.tfstate` to git
 - mixes prod and non-prod in the same backend key
 - recommends workspace-only isolation as a substitute for backend-level IAM separation
-- writes DynamoDB-lock configuration on Terraform 1.11+ instead of using `use_lockfile = true` on the S3 backend
+- writes DynamoDB-lock configuration on Terraform 1.10+ instead of using `use_lockfile = true` on the S3 backend
 - reads via `terraform_remote_state` within a single team's stack instead of using module outputs (see [module-patterns.md](module-patterns.md#3-use-terraform_remote_state-sparingly--only-at-true-ownership-boundaries))
 - omits the rollback/recovery note for destructive state operations
 

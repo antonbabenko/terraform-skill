@@ -391,7 +391,7 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     env:
-      TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
+      TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/terraform-plugin-cache
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -402,7 +402,7 @@ jobs:
       - name: Cache Terraform Plugins
         uses: actions/cache@v4
         with:
-          path: ~/.terraform.d/plugin-cache
+          path: ${{ runner.temp }}/terraform-plugin-cache
           key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
 
       - name: Terraform Init

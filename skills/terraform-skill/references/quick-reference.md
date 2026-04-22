@@ -530,12 +530,13 @@ tests/
 
 ### From Terraform → OpenTofu
 
-**Good news:** OpenTofu is a drop-in replacement!
+**Good news:** OpenTofu is a drop-in replacement for Terraform ≤1.5.x; a feature-compatible fork thereafter with divergence on encryption, mock providers, provider functions, and other post-1.6 additions. See the [Terraform vs OpenTofu Comparison](#terraform-vs-opentofu-comparison) above and verify specific feature availability per version.
 
-1. **No code changes needed**
-   - All Terraform syntax works
+1. **No code changes needed for ≤1.5.x syntax**
+   - Terraform ≤1.5.x syntax works as-is
    - Same provider ecosystem
    - Compatible state files
+   - Post-1.6 features (encryption, mock providers, provider functions, etc.) may differ — verify per version
 
 2. **Update CI/CD:**
    ```bash
@@ -626,8 +627,8 @@ Required documentation for all modules:
 | Syntax | Meaning | Use Case |
 |--------|---------|----------|
 | `"5.0.0"` | Exact version | Avoid (inflexible) |
-| `"~> 5.0"` | Pessimistic (5.0.x) | Recommended for stability |
-| `"~> 5.0.1"` | Pessimistic (5.0.x where x >= 1) | Specific patch minimum |
+| `"~> 5.0"` | Pessimistic (>= 5.0, < 6.0 — any 5.x) | Allow minor and patch updates within 5.x |
+| `"~> 5.0.1"` | Pessimistic (>= 5.0.1, < 5.1.0 — 5.0.x patches) | Lock to 5.0.x patch updates only |
 | `">= 5.0, < 6.0"` | Range | Any 5.x version |
 | `">= 5.0"` | Minimum | Risky (breaking changes) |
 
