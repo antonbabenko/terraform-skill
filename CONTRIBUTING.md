@@ -332,7 +332,7 @@ Commit type determines the version bump, the changelog group, and whether a rele
 
 ### Pull Request Process
 
-1. **Create a feature branch** from `upd-april-2026` (or the current development branch; `master` is the release branch)
+1. **Create a feature branch** from `master`:
 
    ```bash
    git checkout -b feature/improve-testing-guidance
