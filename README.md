@@ -1,11 +1,11 @@
-# Terraform Skill for Claude
+# Terraform & OpenTofu Skill for AI Agents
 
-[![Claude Skill](https://img.shields.io/badge/Claude-Skill-5865F2)](https://docs.claude.ai/docs/agent-skills)
+[![Agent Skill](https://img.shields.io/badge/Agent-Skill-5865F2)](https://agentskills.io)
 [![Terraform](https://img.shields.io/badge/Terraform-1.0+-623CE4)](https://www.terraform.io/)
 [![OpenTofu](https://img.shields.io/badge/OpenTofu-1.6+-FFD814)](https://opentofu.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Comprehensive Terraform and OpenTofu best practices skill for Claude Code. Get instant guidance on testing strategies, module patterns, CI/CD workflows, and production-ready infrastructure code.
+Comprehensive Terraform and OpenTofu best practices skill for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, and more). Get instant guidance on testing strategies, module patterns, CI/CD workflows, and production-ready infrastructure code.
 
 ## What This Skill Provides
 
@@ -230,9 +230,9 @@ Not just "what to do" but "when and why" - helping you make informed architectur
 
 ## Requirements
 
-- **Claude Code** or other Claude environment supporting skills
+- **AI agent with skill support** — Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, or any [Agent Skills](https://agentskills.io)-compatible host
 - **Terraform** 1.0+ or **OpenTofu** 1.6+
-- Optional: MCP Terraform server for enhanced registry integration
+- Optional: [Terraform MCP server](https://github.com/hashicorp/terraform-mcp-server) for enhanced registry integration
 
 ## Contributing
 
@@ -245,19 +245,6 @@ See [CLAUDE.md](CLAUDE.md) for:
 **Issues & Feedback:**
 [GitHub Issues](https://github.com/antonbabenko/terraform-skill/issues)
 
-## Releases
-
-Releases are automated based on conventional commits in commit messages:
-
-| Commit Type | Version Bump | Example |
-|-------------|--------------|---------|
-| `feat!:` or `BREAKING CHANGE:` | Major | 1.2.3 → 2.0.0 |
-| `feat:` | Minor | 1.2.3 → 1.3.0 |
-| `fix:` | Patch | 1.2.3 → 1.2.4 |
-| Other commits | Patch (default) | 1.2.3 → 1.2.4 |
-
-Releases are created automatically when changes are pushed to master.
-
 ## Related Resources
 
 ### Official Documentation
@@ -268,6 +255,7 @@ Releases are created automatically when changes are pushed to master.
 
 ### Community Resources
 - [Awesome Terraform](https://github.com/shuaibiyy/awesome-tf)
+- [Awesome Terraform Compliance](https://github.com/antonbabenko/awesome-terraform-compliance)
 - [Terraform Best Practices](https://terraform-best-practices.com) - Comprehensive guide (base for this skill)
 - [terraform-aws-modules](https://github.com/terraform-aws-modules) - Production-grade AWS modules
 - [Terratest](https://terratest.gruntwork.io/docs/) - Go testing framework for Terraform
@@ -281,13 +269,6 @@ Releases are created automatically when changes are pushed to master.
 - [TFLint](https://github.com/terraform-linters/tflint) - Terraform linter
 - [Trivy](https://github.com/aquasecurity/trivy) - Security scanner for IaC
 
-## License & Attribution
+## License
 
-**License:** Apache 2.0 - see [LICENSE](LICENSE)
-
-If you create derivative works or skills based on this skill, please include:
-```
-Based on terraform-skill by Anton Babenko
-https://github.com/antonbabenko/terraform-skill
-terraform-best-practices.com | Compliance.tf
-```
+Apache 2.0
