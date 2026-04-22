@@ -3,7 +3,7 @@
 > **Part of:** [terraform-skill](../SKILL.md)
 > **Purpose:** Detailed guides for Terraform/OpenTofu testing frameworks
 
-This document provides in-depth guidance on testing frameworks for Infrastructure as Code. For the decision matrix and high-level overview, see the [main skill file](../SKILL.md#testing-strategy-framework).
+This document provides in-depth guidance on testing frameworks for Infrastructure as Code. For the decision matrix and high-level overview, see the [main skill file](../SKILL.md#testing-strategy).
 
 ---
 
@@ -83,6 +83,8 @@ terraform show -json tfplan | jq '.'
 
 ### Basic Structure
 
+> **Test discovery:** `terraform test` finds `*.tftest.hcl` files under `tests/` relative to the module root. Use `-filter=<path>` to scope to a specific file.
+
 ```hcl
 # tests/s3_bucket.tftest.hcl
 run "create_bucket" {
@@ -95,10 +97,10 @@ run "create_bucket" {
 }
 
 run "verify_encryption" {
-  command = plan
+  command = apply  # `rule` is a set; use `one(...)` to extract the singleton
 
   assert {
-    condition     = aws_s3_bucket_server_side_encryption_configuration.main.rule[0].apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
+    condition     = one(aws_s3_bucket_server_side_encryption_configuration.main.rule).apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
     error_message = "Bucket must use AES256 encryption"
   }
 }
@@ -135,7 +137,7 @@ mcp__terraform__get_provider_details({
 |--------------|------------|----------|
 | `rule` in `aws_s3_bucket_server_side_encryption_configuration` | **set** | ❌ Cannot use `[0]` |
 | `transition` in `aws_s3_bucket_lifecycle_configuration` | **set** | ❌ Cannot use `[0]` |
-| `noncurrent_version_expiration` in lifecycle | **list** | ✅ Can use `[0]` |
+| `noncurrent_version_expiration` in lifecycle | **nested block (MaxItems=1)** — list-of-1 | ✅ Can use `[0]` |
 
 ### Working with Set-Type Blocks
 
@@ -417,7 +419,7 @@ run "verify_lifecycle_transitions" {
   assert {
     # Check that both transitions exist using for expression
     condition = length([
-      for rule in aws_s3_bucket_lifecycle_configuration.this[0].rule :
+      for rule in aws_s3_bucket_lifecycle_configuration.this.rule :
       rule.id if rule.id == "archive"
     ]) == 1
     error_message = "Lifecycle rule should exist"
@@ -426,7 +428,7 @@ run "verify_lifecycle_transitions" {
   assert {
     # Verify transition count using length
     condition = alltrue([
-      for rule in aws_s3_bucket_lifecycle_configuration.this[0].rule :
+      for rule in aws_s3_bucket_lifecycle_configuration.this.rule :
       length(rule.transition) == 2
     ])
     error_message = "Should have 2 transitions"
@@ -454,6 +456,7 @@ package test
 
 import (
     "testing"
+    "github.com/gruntwork-io/terratest/modules/random"
     "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/stretchr/testify/assert"
 )
@@ -464,7 +467,7 @@ func TestS3Module(t *testing.T) {
     terraformOptions := &terraform.Options{
         TerraformDir: "../examples/complete",
         Vars: map[string]interface{}{
-            "bucket_name": "test-bucket-" + uniqueId(),
+            "bucket_name": "test-bucket-" + random.UniqueId(),
         },
     }
 
@@ -547,7 +550,7 @@ stage(t, "teardown", func() {
 Quick syntax check? → terraform validate + fmt
 Security scan? → trivy + checkov
 Terraform 1.6+, simple logic? → Native tests
-Pre-1.6, or complex integration? → Terratest
+Complex integration or multi-cloud orchestration? → Terratest
 ```
 
 ### Cost Optimization

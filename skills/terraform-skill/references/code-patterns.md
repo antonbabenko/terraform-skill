@@ -334,7 +334,7 @@ moved {
 | Case | Use | Why |
 |------|-----|-----|
 | stable key set known at plan | `for_each` over static map/var | avoids count index churn on insert/remove |
-| key set unknowable at plan | `count = bool ? 1 : 0` for singleton | keys cannot be resolved at plan time |
+| key set unknowable at plan | `count = bool ? 1 : 0` for singleton | keys derived from values unknown until apply |
 
 - ❌ `depends_on` does NOT fix `Invalid for_each argument` — it orders applies, not plan-time value resolution
 - ❌ deriving `for_each` keys from another resource's computed attrs (IDs, ARNs)
@@ -421,7 +421,7 @@ output "first_subnet_id" {
 
 # ❌ BAD - Legacy pattern
 output "security_group_id" {
-  value = element(concat(aws_security_group.this.*.id, [""]), 0)
+  value = element(concat(aws_security_group.this[*].id, [""]), 0)
 }
 ```
 
@@ -527,11 +527,10 @@ resource "aws_db_instance" "this" {
 
 ```hcl
 # AWS provider function example
-data "aws_region" "current" {}
-
 locals {
-  # Provider function (Terraform 1.8+)
-  bucket_name = provider::aws::arn_build("s3", "my-bucket", data.aws_region.current.name)
+  # provider::aws::arn_build(partition, service, region, account_id, resource)
+  # S3 ARNs are global: region and account_id are empty strings.
+  bucket_arn = provider::aws::arn_build("aws", "s3", "", "", "my-bucket")
 }
 
 # Check provider documentation for available functions
@@ -611,7 +610,10 @@ resource "aws_db_instance" "this" {
   instance_class = "db.t3.micro"
   username       = "admin"
 
-  # write-only: Terraform sends to AWS then forgets it (not in state)
+  # password_wo keeps the resource argument out of state (1.11+),
+  # but the data source still reads secret_string into state on refresh.
+  # For true state exclusion: use ephemeral (1.10+), manage_master_user_password,
+  # or inject via CI env var outside Terraform.
   password_wo = data.aws_secretsmanager_secret_version.db_password.secret_string
 }
 
@@ -692,9 +694,9 @@ resource "aws_security_group" "this" {
 version = "5.0.0"
 
 # Pessimistic constraint (recommended for stability)
-# Allows patch updates only
-version = "~> 5.0"      # Allows 5.0.x (any x), but not 5.1.0
-version = "~> 5.0.1"    # Allows 5.0.x where x >= 1, but not 5.1.0
+# The rightmost component is the one that's allowed to increment.
+version = "~> 5.0"      # 5.x: >= 5.0, < 6.0 — allows 5.1, 5.2, 5.99
+version = "~> 5.0.1"    # 5.0.x patches only: >= 5.0.1, < 5.1.0
 
 # Range constraints
 version = ">= 5.0, < 6.0"     # Any 5.x version
@@ -850,7 +852,7 @@ terraform {
 ```hcl
 # Before (0.12 style)
 output "security_group_id" {
-  value = element(concat(aws_security_group.this.*.id, [""]), 0)
+  value = element(concat(aws_security_group.this[*].id, [""]), 0)
 }
 
 variable "config" {
@@ -927,7 +929,10 @@ resource "aws_db_instance" "this" {
   engine   = "mysql"
   username = "admin"
 
-  # write-only: Sent to AWS, not stored in state
+  # password_wo keeps the resource argument out of state (1.11+),
+  # but the data source still reads secret_string into state on refresh.
+  # For true state exclusion: use ephemeral (1.10+), manage_master_user_password,
+  # or inject via CI env var outside Terraform.
   password_wo = data.aws_secretsmanager_secret_version.db_password.secret_string
 }
 ```

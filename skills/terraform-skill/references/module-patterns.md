@@ -215,11 +215,12 @@ environments/prod/
 # ✅ GOOD - Remote state
 terraform {
   backend "s3" {
-    bucket         = "my-terraform-state"
-    key            = "prod/networking/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-locks"  # State locking
-    encrypt        = true                # Encryption at rest
+    bucket       = "my-terraform-state"
+    key          = "prod/networking/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true   # Terraform 1.10+; native S3 locking
+    # Pre-1.10 runtime: use dynamodb_table = "terraform-locks" instead
   }
 }
 ```
@@ -436,7 +437,7 @@ For public modules, always include a LICENSE file:
    | Name | Version |
    |------|---------|
    | [terraform/tofu] | >= 1.7.0 |
-   | aws | >= 6.0 |
+   | aws | ~> 5.0 |
    ```
 
 4. **Example command variations:**
