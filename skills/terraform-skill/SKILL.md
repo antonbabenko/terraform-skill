@@ -388,12 +388,14 @@ checkov -d .
 - Use default VPC
 - Skip encryption
 - Open security groups to 0.0.0.0/0
+- Use inline `ingress`/`egress` blocks in `aws_security_group`
 
 ✅ **Do:**
 - Use AWS Secrets Manager / Parameter Store
 - Create dedicated VPCs
 - Enable encryption at rest
 - Use least-privilege security groups
+- Use separate `aws_vpc_security_group_ingress_rule` / `aws_vpc_security_group_egress_rule` resources (AWS provider v5+), or `aws_security_group_rule` for older providers
 
 **For detailed security guidance, see:**
 - **[Security & Compliance Guide](references/security-compliance.md)** - Trivy/Checkov integration, secrets management, state file security, compliance testing
