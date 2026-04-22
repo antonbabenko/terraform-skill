@@ -48,25 +48,18 @@ This plugin is distributed via Claude Code marketplace using `.claude-plugin/mar
 
 ### Manual Installation
 
+Symlink a local clone into Claude's plugins directory:
+
 ```bash
 # Clone the repository
 git clone https://github.com/antonbabenko/terraform-skill
 
-# Register as a local marketplace and install permanently
-/plugin marketplace add ./terraform-skill
-/plugin install terraform-skill@antonbabenko
+# Symlink into Claude's plugins directory
+mkdir -p ~/.claude/plugins
+ln -s "$(pwd)/terraform-skill" ~/.claude/plugins/terraform-skill
 ```
 
-### Private Testing
-
-While the repository is private, you can test locally:
-
-```bash
-git clone git@github.com:antonbabenko/terraform-skill.git
-
-# Use only for the current session
-claude --plugin-dir ./terraform-skill
-```
+Claude Code autodiscovers the skill at `skills/terraform-skill/SKILL.md` on next launch. Edits to the clone are picked up live.
 
 ### Verify Installation
 
