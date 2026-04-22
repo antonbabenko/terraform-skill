@@ -470,4 +470,19 @@ bucketName := fmt.Sprintf("test-bucket-%s-%s",
 
 ---
 
+## LLM Mistake Checklist — CI/CD
+
+Common model mistakes to correct before returning pipeline recommendations:
+
+- generates a pipeline with no lockfile strategy (`.terraform.lock.hcl` uncommitted or unreviewed)
+- re-runs `terraform plan` inside the apply job instead of consuming the reviewed plan artifact from the plan stage
+- omits environment protection / approval gates on production apply
+- uses unpinned provider versions, causing drift between local and CI runs
+- skips the policy/security stage despite the pipeline claiming compliance
+- grants CI long-lived static cloud credentials instead of OIDC / workload-identity federation
+- fails to restrict artifact access when `terraform show -json` results may contain sensitive plan output
+- merges provider/runtime upgrades with functional changes in the same PR
+
+---
+
 **Back to:** [Main Skill File](../SKILL.md)

@@ -334,6 +334,29 @@ moved {
 
 ## Modern Terraform Features (1.0+)
 
+### Feature Guard Table — Version Floor & Common LLM Errors
+
+Before emitting a feature, verify the runtime floor. Each feature here is also a known hallucination surface — the error pattern column names the mistake to avoid.
+
+| Feature | Min version | Common LLM error pattern |
+|---------|-------------|--------------------------|
+| `for_each` over `count` for stable identities | 0.12+ | defaults to `count` for every collection, causing index churn |
+| `try()` function | 0.13+ | falls back to `element(concat())` legacy pattern |
+| `nullable = false` | 1.1+ | omits it, letting `null` silently override defaults |
+| `moved` blocks | 1.1+ | omitted during refactor, causing destroy/create |
+| `optional()` with defaults | 1.3+ | emits wrapper variables and loose `map(any)` contracts |
+| declarative `import` blocks | 1.5+ | recommends ad-hoc CLI `terraform import` only |
+| `check` blocks | 1.5+ | ignores runtime assertions entirely |
+| native `terraform test` | 1.6+ | treats mocked-provider tests as full integration coverage |
+| mock providers | 1.7+ | asserts computed values in `command = plan` mode |
+| `removed` blocks | 1.7+ | deletes resources with no lifecycle transition |
+| provider-defined functions | 1.8+ | overuses data sources for simple transformations |
+| cross-variable validation | 1.9+ | pushes checks into postconditions only |
+| `write_only` arguments | 1.11+ | uses `sensitive = true` and assumes state is safe |
+| S3 native lock-file | 1.11+ | recommends DynamoDB lock table even on 1.11+ |
+
+If target runtime is below a feature floor, emit the pre-floor fallback explicitly instead of silently downgrading.
+
 ### try() Function (Terraform 0.13+)
 
 **Use try() instead of element(concat()):**
@@ -403,7 +426,7 @@ database_config = {
 
 ### Moved Blocks (Terraform 1.1+)
 
-**Rename resources without destroy/recreate:**
+**Rename resources without destroy/recreate.** Omitting `moved` during a refactor is one of the most common LLM mistakes — the model renames the address and silently turns the rename into destroy/create. Always emit `moved` in the same change as the rename, then verify `terraform plan` shows a move operation, not replacement.
 
 ```hcl
 # Rename a resource
@@ -487,7 +510,7 @@ variable "backup_retention" {
 
 ### Write-Only Arguments (Terraform 1.11+)
 
-**Always use write-only arguments or external secret management:**
+**Always use write-only arguments or external secret management.** A common LLM mistake is to mark a variable `sensitive = true` and assume the value is kept out of state — it is not. `sensitive` only masks display; write-only arguments (or external secret lookups at runtime) are what actually keep material out of state. Verify on 1.11+: prefer `*_wo` arguments for credentials; on older runtimes, source secrets from a secret manager and never store them in variables or tfvars.
 
 ```hcl
 # ✅ GOOD - External secret with write-only argument
@@ -853,6 +876,24 @@ resource "aws_subnet" "public" {
 - VPC with secondary CIDR blocks
 - Resources that depend on optional configurations
 - Complex deletion order requirements
+
+---
+
+## LLM Mistake Checklist — Code Patterns
+
+Common model mistakes when generating HCL. Correct these before returning code:
+
+- defaults to `count` for every collection — prefer `for_each` with stable keys whenever identity matters
+- omits `moved` blocks during rename/refactor, silently turning the change into destroy/create
+- builds `for_each` keys from computed IDs not known until apply — planning will fail
+- uses list index as long-lived identity (`count.index`) instead of business-meaningful keys
+- marks variables `sensitive = true` and assumes the value stays out of state — on 1.11+ use `write_only` / `*_wo` arguments
+- falls back to `element(concat(...))` instead of `try()` on 0.13+
+- accepts untyped `map(any)` / `any` for long-lived module contracts instead of `optional()` with typed defaults (1.3+)
+- suggests `terraform state mv` where `moved` blocks are safer and reviewable
+- recommends ad-hoc CLI `terraform import` instead of declarative `import` blocks (1.5+)
+- emits an exact `version = "5.0.0"` pin where `~> 5.0` would be more maintainable
+- silently emits 1.11+ features (S3 native lock, `write_only`, `removed`) without checking the runtime floor
 
 ---
 

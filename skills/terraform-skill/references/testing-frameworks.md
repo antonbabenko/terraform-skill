@@ -560,4 +560,19 @@ Pre-1.6, or complex integration? → Terratest
 
 ---
 
+## LLM Mistake Checklist — Testing
+
+Common model mistakes when generating test code:
+
+- asserts computed values (ARNs, generated names, cloud-assigned IDs) in `command = plan` mode — must use `command = apply`
+- indexes set-type nested blocks with `[0]` — sets are unordered, use `for` expressions or `command = apply` to materialize
+- treats mocked-provider tests as integration coverage — mocks validate logic only, not provider behavior
+- forgets to exercise `validation` blocks with invalid inputs — only tests the happy path
+- skips idempotency (`terraform plan -detailed-exitcode` after apply) — the most common regression detector
+- asserts on Terraform syntax instead of module behavior (`terraform validate` already covers syntax)
+- runs expensive real-cloud integration tests on every commit instead of gating them behind main/scheduled
+- omits cleanup, leaving orphaned resources billed against the test account
+
+---
+
 **Back to:** [Main Skill File](../SKILL.md)
