@@ -51,7 +51,7 @@ terraform {
     key          = "prod/vpc/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
-    use_lock_file = true  # Native S3 locking (Terraform 1.11+)
+    use_lockfile = true  # Native S3 locking (Terraform 1.11+)
     
     # Optional but recommended
     kms_key_id = "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
@@ -90,7 +90,7 @@ terraform {
 - Existing infrastructure already using DynamoDB
 - Need DynamoDB for other purposes
 
-**Migration note:** Existing setups using DynamoDB will continue to work. The `use_lock_file` option is opt-in.
+**Migration note:** Existing setups using DynamoDB will continue to work. The `use_lockfile` option is opt-in.
 
 **Backend infrastructure setup (Terraform 1.11+ with lock-file):**
 
@@ -259,9 +259,11 @@ terraform {
   backend "gcs" {
     bucket = "my-terraform-state"
     prefix = "prod/vpc"
-    
-    # Optional: Customer-managed encryption key
-    encryption_key = "projects/my-project/locations/us-central1/keyRings/terraform/cryptoKeys/state"
+
+    # For customer-managed encryption, configure the bucket itself with
+    # `default_kms_key_name` (see bootstrap below) rather than the backend.
+    # The backend's `encryption_key` attribute is for CSEK (a base64-encoded
+    # 32-byte AES-256 key), NOT a Cloud KMS resource name.
   }
 }
 ```
@@ -442,7 +444,7 @@ terraform {
     key          = "prod/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
-    use_lock_file = true  # Enable native S3 locking
+    use_lockfile = true  # Enable native S3 locking
   }
 }
 ```
@@ -452,7 +454,7 @@ terraform {
 - ✅ Lower cost (no DynamoDB charges)
 - ✅ Unified management (state + locks in one bucket)
 
-**Migration from DynamoDB:** Simply add `use_lock_file = true` and remove `dynamodb_table`. Both can coexist during migration.
+**Migration from DynamoDB:** Set both `dynamodb_table` and `use_lockfile = true` during Terraform 1.10+ migration — locks acquire via both mechanisms. Once every workflow runs on 1.10+, remove `dynamodb_table`.
 
 ### DynamoDB Locking for S3 (Pre-1.11 or Legacy)
 
@@ -471,7 +473,11 @@ terraform plan
 # Another user attempts operation
 terraform apply
 # Sees: Error acquiring the state lock
-# Wait time: 0s (fails immediately)
+# Default behavior: Terraform retries with backoff until the lock is released
+# or roughly 9 minutes elapse, then fails.
+# Override with -lock-timeout=<duration>, e.g.:
+#   terraform apply -lock-timeout=5m
+# Use -lock-timeout=0s to fail immediately without retry.
 ```
 
 **View current locks:**
@@ -690,6 +696,7 @@ terraform {
     {
       "Effect": "Allow",
       "Action": [
+        "dynamodb:DescribeTable",
         "dynamodb:GetItem",
         "dynamodb:PutItem",
         "dynamodb:DeleteItem"
@@ -699,6 +706,7 @@ terraform {
     {
       "Effect": "Allow",
       "Action": [
+        "kms:DescribeKey",
         "kms:Decrypt",
         "kms:Encrypt",
         "kms:GenerateDataKey"
@@ -824,6 +832,12 @@ data "aws_secretsmanager_secret_version" "db_password" {
 }
 ```
 
+> **Caveat:** Reading a secret through `data "aws_secretsmanager_secret_version"`
+> pulls `secret_string` into the state file on every refresh. If the goal is to
+> keep the raw secret out of state, use an `ephemeral` resource/data source
+> (Terraform 1.10+), `manage_master_user_password`, or inject the value via a
+> CI-only environment variable instead of a data source.
+
 #### ✅ DO: Reference External Secrets
 
 ```hcl
@@ -838,10 +852,16 @@ resource "aws_db_instance" "this" {
 }
 ```
 
-#### Best Practice: Rotate Secrets Stored in State
+> **Caveat:** The data source writes `secret_string` into state on every refresh,
+> so this pattern avoids hardcoding — it does not exclude the secret from state.
+> For true state exclusion, use an `ephemeral` resource/data source
+> (Terraform 1.10+), `manage_master_user_password`, or a CI-injected env var.
+
+#### Best Practice: Reconcile State After External Secret Rotation
 
 ```bash
-# After rotation, refresh state
+# After rotation (handled outside Terraform), refresh state so it reflects
+# the new value. This does not rotate the secret itself.
 terraform apply -refresh-only
 ```
 
@@ -876,21 +896,9 @@ resource "aws_cloudtrail" "terraform_state" {
 
 **Azure Storage logging:**
 
-```hcl
-resource "azurerm_storage_account" "terraform_state" {
-  # ... other config ...
-
-  blob_properties {
-    logging {
-      delete                = true
-      read                  = true
-      write                 = true
-      version               = true
-      retention_policy_days = 90
-    }
-  }
-}
-```
+`azurerm_storage_account.blob_properties` does NOT expose a `logging` sub-block.
+Configure blob-service audit logs via `azurerm_monitor_diagnostic_setting`
+targeting the storage account's `blobServices` resource.
 
 **What to monitor:**
 - Who accessed state files
@@ -961,13 +969,18 @@ git commit -m "Migrate state to S3 backend"
 
 #### S3 → Terraform Cloud Migration
 
-**Step 1: Create Terraform Cloud workspace**
+**Step 1: Authenticate to Terraform Cloud**
 
 ```bash
-# Via CLI
+# Authenticate the CLI
 terraform login
-terraform workspace new prod-infrastructure
 ```
+
+The Terraform Cloud workspace is created automatically on first `terraform init`
+against the `cloud {}` block below (provided the org permits auto-creation).
+Alternatively, pre-create it in the TFC UI or with the `tfe_workspace` resource.
+Do NOT use `terraform workspace new` here — CLI workspaces are a different
+concept from Terraform Cloud workspaces.
 
 **Step 2: Update backend config**
 
@@ -1413,7 +1426,7 @@ resource "aws_instance" "app" {
 - Critical infrastructure vs experimental features
 
 ✅ **Large state files:**
-- State operations becoming slow (>1000 resources)
+- State operations becoming slow (>1000 resources — rough heuristic, depends on provider refresh time)
 
 ✅ **Independent deployment cadence:**
 - Database needs weekly updates
@@ -1439,7 +1452,7 @@ resource "aws_instance" "app" {
 | Factor | Split State | Single State |
 |--------|-------------|--------------|
 | **Team size** | Multiple teams | Single team |
-| **Resource count** | >500 resources | <100 resources |
+| **Resource count** | >500 resources | <100 resources (rough heuristics — depends on provider refresh time) |
 | **Update frequency** | Different cadences | Same cadence |
 | **Risk tolerance** | Low (production) | High (dev/test) |
 | **Coupling** | Loosely coupled | Tightly coupled |
@@ -1602,7 +1615,7 @@ terraform {
 **Detect drift:**
 
 ```bash
-# Terraform 1.5+
+# Terraform 0.15.4+
 terraform plan -refresh-only
 
 # Shows what's changed in infrastructure vs state
@@ -1628,7 +1641,7 @@ terraform apply  # Updates state
 **Prevent drift:**
 - ✅ Use CloudTrail to monitor manual changes
 - ✅ Implement policy to block manual changes
-- ✅ Use drift detection tools (Terraform Cloud, checkov)
+- ✅ Use drift detection tools (Terraform Cloud drift detection, driftctl)
 - ✅ Regular `terraform plan` in CI/CD
 - ✅ Enable termination protection on critical resources
 

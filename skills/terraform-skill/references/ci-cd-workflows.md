@@ -25,7 +25,10 @@ This document provides detailed CI/CD workflow templates and optimization strate
 # .github/workflows/terraform.yml
 name: Terraform
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   validate:
@@ -43,11 +46,13 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.50.3
+      - name: TFLint Init
+        run: tflint --init
       - name: TFLint
-        run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-          tflint --init
-          tflint
+        run: tflint
 
   test:
     needs: validate
@@ -61,9 +66,9 @@ jobs:
 
       # Or for Terratest:
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: 'stable'
 
       - name: Run Terratest
         run: |
@@ -170,9 +175,9 @@ test:
   stage: test
   script:
     - terraform test
-  only:
-    - merge_requests
-    - main
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 plan:
   extends: .terraform_template
@@ -183,9 +188,9 @@ plan:
     paths:
       - ${TF_ROOT}/tfplan
     expire_in: 1 week
-  only:
-    - merge_requests
-    - main
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 apply:
   extends: .terraform_template
@@ -194,9 +199,9 @@ apply:
     - terraform apply tfplan
   dependencies:
     - plan
-  only:
-    - main
-  when: manual
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
   environment:
     name: production
 ```
@@ -241,7 +246,7 @@ terraformOptions := &terraform.Options{
     Vars: map[string]interface{}{
         "tags": map[string]string{
             "Environment": "test",
-            "TTL":         "2h",
+            "CreatedAt":   time.Now().Format(time.RFC3339),
             "CreatedBy":   "CI",
             "JobID":       os.Getenv("GITHUB_RUN_ID"),
         },
@@ -258,17 +263,29 @@ terraformOptions := &terraform.Options{
 ```bash
 #!/bin/bash
 # cleanup-test-resources.sh
+# Resources are tagged with CreatedAt = ISO8601 timestamp (RFC3339).
+# AWS resourcegroupstaggingapi tag filters only support equality, so we
+# fetch by Environment=test and filter by timestamp client-side with jq.
 
-# Find and terminate instances older than 2 hours with test tag
+set -euo pipefail
+
+CUTOFF=$(date -u -d '2 hours ago' +%s)
+
 aws resourcegroupstaggingapi get-resources \
   --tag-filters Key=Environment,Values=test \
-  --query 'ResourceTagMappingList[?Tags[?Key==`TTL` && Value<`'$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%S)'`]].ResourceARN' \
-  --output text | \
-  while read arn; do
-    instance_id=$(echo $arn | grep -oP 'instance/\K[^/]+')
-    if [ ! -z "$instance_id" ]; then
+  --query 'ResourceTagMappingList[]' \
+  --output json | \
+  jq -r --argjson cutoff "$CUTOFF" '
+    .[]
+    | select(
+        any(.Tags[]; .Key == "CreatedAt" and (.Value | fromdateiso8601) < $cutoff)
+      )
+    | .ResourceARN
+  ' | while read -r arn; do
+    instance_id=$(echo "$arn" | grep -oP 'instance/\K[^/]+' || true)
+    if [ -n "$instance_id" ]; then
       echo "Terminating instance: $instance_id"
-      aws ec2 terminate-instances --instance-ids $instance_id
+      aws ec2 terminate-instances --instance-ids "$instance_id"
     fi
   done
 ```
@@ -368,13 +385,28 @@ terraform {
 ### 5. Cache Terraform Plugins
 
 ```yaml
-# GitHub Actions
-- name: Cache Terraform Plugins
-  uses: actions/cache@v4
-  with:
-    path: |
-      ~/.terraform.d/plugin-cache
-    key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+# GitHub Actions — set TF_PLUGIN_CACHE_DIR so `terraform init` actually
+# writes into the cached path, then restore the cache between runs.
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    env:
+      TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Create plugin cache dir
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      - name: Cache Terraform Plugins
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Terraform Init
+        run: terraform init
 ```
 
 ### 6. Security Scanning in CI
@@ -386,13 +418,13 @@ security-scan:
     - uses: actions/checkout@v4
 
     - name: Run Trivy
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.29.0
       with:
         scan-type: 'config'
         scan-ref: '.'
 
     - name: Run Checkov
-      uses: bridgecrewio/checkov-action@master
+      uses: bridgecrewio/checkov-action@v12.2.0
       with:
         directory: .
         framework: terraform
@@ -483,7 +515,7 @@ projects:
   - name: production
     dir: environments/prod
     workspace: default
-    terraform_version: v1.6.0
+    terraform_version: 1.12.0
     workflow: custom
 
 workflows:
@@ -492,7 +524,7 @@ workflows:
       steps:
         - init
         - plan:
-            extra_args: ["-lock", "false"]
+            extra_args: ["-lock=false"]
     apply:
       steps:
         - apply

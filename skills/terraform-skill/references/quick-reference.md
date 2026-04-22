@@ -82,6 +82,7 @@ terraform import aws_instance.web i-1234567890abcdef0
 
 # Import using import blocks (1.5+)
 # Define in .tf: import { to = aws_instance.web, id = "i-123..." }
+# Note: File must not exist — Terraform refuses to overwrite.
 terraform plan -generate-config-out=imported.tf
 
 # Detect configuration drift
@@ -97,7 +98,11 @@ terraform state pull > backup-$(date +%Y%m%d).tfstate
 terraform state push backup.tfstate
 
 # Force unlock stuck state lock
+# Default: prompts for y/N confirmation
 terraform force-unlock LOCK_ID
+
+# CI-friendly (skips prompt):
+terraform force-unlock -force LOCK_ID
 ```
 
 ### State Backend Migration
@@ -192,10 +197,10 @@ Need to test Terraform/OpenTofu code?
 
 ### Terraform 1.6+ / OpenTofu 1.6+
 
-- ✅ NEW: Native `terraform test` / `tofu test`
+- ✅ NEW: Native `terraform test` / `tofu test` framework with `.tftest.hcl` files
 - ✅ Consider migrating simple tests from Terratest
 - ✅ Keep Terratest for complex integration
-- ✅ All Terraform 1.0+ features available
+- ✅ Import blocks from 1.5 available for declarative imports with `-generate-config-out`
 
 ### Terraform 1.7+ / OpenTofu 1.7+
 
@@ -212,14 +217,14 @@ Both Terraform and OpenTofu are fully supported by this skill. The choice depend
 
 | Factor | Terraform | OpenTofu |
 |--------|-----------|----------|
-| **Licensing** | Business Source License (BSL) 1.1 | Mozilla Public License 2.0 (MPL 2.0) |
+| **Licensing** | Business Source License 1.1 (BUSL-1.1) | Mozilla Public License 2.0 (MPL 2.0) |
 | **Governance** | HashiCorp (single vendor) | Linux Foundation (community-driven) |
 | **Latest Version** | 1.14+ | 1.11+ |
 | **Native Testing** | 1.6+ | 1.6+ |
 | **Mock Providers** | 1.7+ | 1.7+ |
 | **Feature Parity** | Reference implementation | Compatible fork with some additions |
 | **Enterprise Support** | HCP Terraform, Terraform Cloud | Multiple vendors |
-| **Migration Path** | N/A | Drop-in replacement for Terraform ≤1.5 |
+| **Migration Path** | N/A | Drop-in replacement for Terraform ≤1.5.x; feature-compatible fork thereafter with divergence on encryption, mock providers, provider functions, and other post-1.6 additions. Verify specific feature availability per version. |
 
 **When to choose Terraform:**
 - Using HashiCorp Terraform Cloud or HCP Terraform
@@ -230,7 +235,7 @@ Both Terraform and OpenTofu are fully supported by this skill. The choice depend
 - Prefer open-source governance model
 - Want to avoid vendor lock-in concerns
 - Building on community-driven development
-- BSL 1.1 license doesn't fit your use case
+- BUSL-1.1 license doesn't fit your use case
 
 **For this skill:**
 - Commands are shown for both: `terraform` and `tofu`
@@ -405,6 +410,7 @@ terraform import aws_subnet.private[0] subnet-abcd1234
 # Or use import blocks (1.5+)
 # In .tf file:
 # import { to = aws_vpc.main, id = "vpc-12345678" }
+# Note: File must not exist — Terraform refuses to overwrite.
 terraform plan -generate-config-out=imported.tf
 ```
 

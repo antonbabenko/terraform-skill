@@ -190,7 +190,7 @@ See [Security & Compliance](references/security-compliance.md) for trivy/checkov
 
 **Never use local state in teams or production.** Remote backends provide automatic locking, encryption, versioning, audit logging, and safe collaboration.
 
-### Minimum Viable Backend (AWS S3, 1.11+)
+### Minimum Viable Backend (AWS S3, 1.10+)
 
 ```hcl
 terraform {
@@ -199,12 +199,12 @@ terraform {
     key           = "prod/vpc/terraform.tfstate"
     region        = "us-east-1"
     encrypt       = true
-    use_lockfile  = true   # Native S3 locking, 1.11+
+    use_lockfile  = true   # Native S3 locking, 1.10+
   }
 }
 ```
 
-On Terraform < 1.11, use `dynamodb_table = "terraform-state-lock"` instead of `use_lockfile`. Azure Storage, GCS, and Terraform Cloud all offer built-in locking — see the State Management reference for syntax.
+On Terraform < 1.10, use `dynamodb_table = "terraform-state-lock"` instead of `use_lockfile`. Azure Storage, GCS, and Terraform Cloud all offer built-in locking — see the State Management reference for syntax.
 
 ### State Organization
 
@@ -242,10 +242,10 @@ Commit `.terraform.lock.hcl` intentionally. Keep provider/runtime upgrades in a 
 | Native `terraform test` | 1.6+ | Built-in test framework |
 | Mock providers | 1.7+ | Cost-free unit testing |
 | `removed` blocks | 1.7+ | Declarative resource removal |
-| Provider-defined functions | 1.8+ | Provider-specific transformations |
-| Cross-variable validation | 1.9+ | Validate relationships between variables |
+| Provider-defined functions | 1.8+ | Provider-specific transformations (requires provider to declare functions) |
+| Cross-variable validation | 1.9+ | Reference other `var.*` in `validation` blocks |
 | `write_only` arguments | 1.11+ | Secrets never stored in state |
-| S3 native lock-file | 1.11+ | State locking without DynamoDB |
+| S3 native lock-file | 1.10+ | State locking without DynamoDB |
 
 Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature Guard Table](references/code-patterns.md#feature-guard-table--version-floor--common-llm-errors) for the full table with common LLM error patterns per feature.
 
@@ -254,7 +254,8 @@ Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature
 - **Terraform 1.0-1.5 / OpenTofu 1.0-1.5**: Terratest for integration, static analysis + plan validation only (no native tests).
 - **1.6+**: native `terraform test` / `tofu test` available — migrate simple unit tests, keep Terratest for complex integration.
 - **1.7+**: mock providers cut test cost — mock for unit tests, real runs for final integration.
-- **1.11+**: `write_only` arguments + S3 native lock are the correct default for new configurations.
+- **1.10+**: S3 native lock-file (`use_lockfile`) is the correct default for new configurations — DynamoDB locking is no longer required.
+- **1.11+**: `write_only` arguments for secret handling keep credentials out of state.
 - **Terraform vs OpenTofu**: both supported. For licensing, governance, and feature delta, see [Quick Reference: Terraform vs OpenTofu](references/quick-reference.md#terraform-vs-opentofu-comparison).
 
 ## Reference Files
