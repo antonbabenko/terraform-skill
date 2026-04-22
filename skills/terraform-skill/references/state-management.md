@@ -59,11 +59,7 @@ terraform {
 }
 ```
 
-**Benefits:**
-- ✅ No separate DynamoDB table needed
-- ✅ Lower cost (no DynamoDB charges)
-- ✅ Simpler infrastructure (one less resource to manage)
-- ✅ Lock files stored alongside state in same bucket
+Tradeoffs vs DynamoDB locking: no separate table, no DynamoDB charges, state and locks co-located in one bucket.
 
 #### S3 with DynamoDB Locking (Pre-1.10 or Legacy)
 
@@ -339,14 +335,7 @@ terraform {
 }
 ```
 
-**Benefits of Terraform Cloud:**
-- ✅ Built-in state management and locking
-- ✅ No infrastructure to manage
-- ✅ Remote execution
-- ✅ Sentinel policy enforcement
-- ✅ Cost estimation
-- ✅ Private module registry
-- ✅ VCS integration
+Terraform Cloud provides: built-in state management and locking, remote execution, Sentinel policy enforcement, cost estimation, private module registry, VCS integration — no backend infra to manage.
 
 ### Backend Configuration Best Practices
 
@@ -448,11 +437,6 @@ terraform {
   }
 }
 ```
-
-**Benefits over DynamoDB:**
-- ✅ Simpler setup (no DynamoDB table)
-- ✅ Lower cost (no DynamoDB charges)
-- ✅ Unified management (state + locks in one bucket)
 
 **Migration from DynamoDB:** Set both `dynamodb_table` and `use_lockfile = true` during Terraform 1.10+ migration — locks acquire via both mechanisms. Once every workflow runs on 1.10+, remove `dynamodb_table`.
 

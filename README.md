@@ -5,41 +5,41 @@
 [![OpenTofu](https://img.shields.io/badge/OpenTofu-1.6+-FFD814)](https://opentofu.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Comprehensive Terraform and OpenTofu best practices skill for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, and more). Get instant guidance on testing strategies, module patterns, CI/CD workflows, and production-ready infrastructure code.
+Terraform and OpenTofu best-practices skill for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, and others). Covers testing strategies, module patterns, CI/CD workflows, and production infrastructure code.
 
-## What This Skill Provides
+## What this skill provides
 
-🧪 **Testing Frameworks**
-- Decision matrix for choosing between native tests and Terratest
-- Testing strategy workflows (static → integration → E2E)
-- Real-world examples and patterns
+**Testing frameworks**
+- Decision matrix for native tests vs Terratest
+- Testing workflows (static, integration, E2E)
+- Examples and patterns
 
-📦 **Module Development**
+**Module development**
 - Structure and naming conventions
 - Versioning strategies
 - Public vs private module patterns
 
-🗄️ **State Management**
-- Remote backend configuration (S3, Azure, GCS, Terraform Cloud)
-- State locking and security patterns
-- Multi-team state isolation strategies
-- State migration and recovery procedures
+**State management**
+- Remote backends (S3, Azure, GCS, Terraform Cloud)
+- Locking and security
+- Multi-team state isolation
+- Migration and recovery procedures
 
-🔄 **CI/CD Integration**
+**CI/CD integration**
 - GitHub Actions workflows
 - GitLab CI examples
-- Cost optimization patterns
+- Cost optimization
 - Compliance automation
 
-🔒 **Security & Compliance**
-- Trivy, Checkov integration
+**Security and compliance**
+- Trivy and Checkov integration
 - Policy-as-code patterns
 - Compliance scanning workflows
 
-📋 **Quick Reference**
+**Quick reference**
 - Decision flowcharts
-- Common patterns (✅ DO vs ❌ DON'T)
-- Cheat sheets for rapid consultation
+- Common patterns (DO vs DON'T)
+- Cheat sheets
 
 ## Installation
 
@@ -150,16 +150,16 @@ Claude Code autodiscovers the skill at `skills/terraform-skill/SKILL.md` on next
 
 <!-- prettier-ignore-end -->
 
-### Verify Installation
+### Verify installation
 
 After installation, try:
 ```
 "Create a Terraform module with testing for an S3 bucket"
 ```
 
-Claude will automatically use the skill when working with Terraform/OpenTofu code.
+Claude picks up the skill automatically when working with Terraform or OpenTofu code.
 
-## Quick Start Examples
+## Quick start examples
 
 **Create a module with tests:**
 > "Create a Terraform module for AWS VPC with native tests"
@@ -179,108 +179,78 @@ Claude will automatically use the skill when working with Terraform/OpenTofu cod
 **State management:**
 > "How should I organize state files for a multi-team environment?"
 
-## What It Covers
+## What it covers
 
-### Testing Strategy Framework
+### Testing strategy
 
-Decision matrices for:
-- When to use native tests (Terraform 1.6+)
-- When to use Terratest (Go-based)
-- Multi-environment testing patterns
+Decision matrices for native tests (Terraform 1.6+) vs Terratest (Go-based), plus multi-environment testing patterns.
 
-### Module Development Patterns
+### Module development
 
-- Naming conventions (`terraform-<PROVIDER>-<NAME>`)
-- Directory structure best practices
-- Input variable organization
-- Output value design
-- Version constraint patterns
-- Documentation standards
+Naming conventions (`terraform-<PROVIDER>-<NAME>`), directory structure, input/output design, version constraints, and documentation standards.
 
-### CI/CD Workflows
+### CI/CD workflows
 
-- GitHub Actions examples
-- GitLab CI templates
-- Atlantis integration
-- Cost estimation (Infracost)
-- Security scanning (Trivy, Checkov)
-- Compliance checking
+GitHub Actions, GitLab CI, Atlantis, Infracost cost estimation, Trivy/Checkov scanning, and compliance checks.
 
-### Security & Compliance
+### Security and compliance
 
-- Static analysis integration
-- Policy-as-code patterns
-- Secrets management
-- State file security
-- State backend encryption
-- Compliance scanning workflows
+Static analysis, policy-as-code, secrets management, state file security, backend encryption, and compliance scanning workflows.
 
-### Common Patterns & Anti-patterns
+### Patterns and anti-patterns
 
-Side-by-side ✅ DO vs ❌ DON'T examples for:
-- Variable naming
-- Resource naming
-- Module composition
-- State management
-- Provider configuration
+Side-by-side DO vs DON'T examples for variable naming, resource naming, module composition, state management, and provider configuration.
 
-## Why This Skill?
+## Why this skill
 
-**Based on Production Experience:**
+**Sources:**
 - Patterns from [terraform-best-practices.com](https://www.terraform-best-practices.com/)
-- Community-tested approaches from terraform-aws-modules
-- AWS Hero expertise in enterprise IaC
-- Real-world usage across 100+ modules
+- Approaches used across the [terraform-aws-modules](https://github.com/terraform-aws-modules) collection
+- AWS Hero experience with enterprise IaC
 
-**Version-Specific Guidance:**
+**Version-specific guidance:**
 - Terraform 1.0+ features
 - OpenTofu 1.6+ compatibility
 - Native test framework (1.6+)
 - Current tooling ecosystem (2024-2026)
 
-**Decision Frameworks:**
-Not just "what to do" but "when and why" - helping you make informed architecture decisions.
+**Decision frameworks:** not just "what to do" but "when and why".
 
 ## Requirements
 
-- **AI agent with skill support** — Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, or any [Agent Skills](https://agentskills.io)-compatible host
-- **Terraform** 1.0+ or **OpenTofu** 1.6+
-- Optional: [Terraform MCP server](https://github.com/hashicorp/terraform-mcp-server) for enhanced registry integration
+- An AI agent with skill support: Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, or any [Agent Skills](https://agentskills.io)-compatible host
+- Terraform 1.0+ or OpenTofu 1.6+
+- Optional: [Terraform MCP server](https://github.com/hashicorp/terraform-mcp-server) for registry integration
 
 ## Contributing
 
-See [CLAUDE.md](CLAUDE.md) for:
-- Skill development guidelines
-- Content structure philosophy
-- How to propose improvements
-- Testing and validation approach
+See [CLAUDE.md](CLAUDE.md) for skill development guidelines, content structure, how to propose improvements, and the validation approach.
 
-**Issues & Feedback:**
-[GitHub Issues](https://github.com/antonbabenko/terraform-skill/issues)
+Report bugs or request features via [GitHub Issues](https://github.com/antonbabenko/terraform-skill/issues).
 
-## Related Resources
+## Related resources
 
-### Official Documentation
-- [Terraform Language](https://developer.hashicorp.com/terraform/docs) - HashiCorp official docs
-- [Terraform Testing](https://developer.hashicorp.com/terraform/language/tests) - Native test framework
-- [OpenTofu Documentation](https://opentofu.org/docs/) - OpenTofu official docs
-- [HashiCorp Best Practices](https://developer.hashicorp.com/terraform/cloud-docs/recommended-practices) - Cloud best practices
+### Official documentation
+- [Terraform Language](https://developer.hashicorp.com/terraform/docs)
+- [Terraform Testing](https://developer.hashicorp.com/terraform/language/tests) - native test framework
+- [OpenTofu Documentation](https://opentofu.org/docs/)
+- [HashiCorp Recommended Practices](https://developer.hashicorp.com/terraform/cloud-docs/recommended-practices)
 
-### Community Resources
+### Community resources
 - [Awesome Terraform](https://github.com/shuaibiyy/awesome-tf)
 - [Awesome Terraform Compliance](https://github.com/antonbabenko/awesome-terraform-compliance)
-- [Terraform Best Practices](https://terraform-best-practices.com) - Comprehensive guide (base for this skill)
-- [terraform-aws-modules](https://github.com/terraform-aws-modules) - Production-grade AWS modules
+- [Terraform Best Practices](https://terraform-best-practices.com) - the guide this skill is based on
+- [terraform-aws-modules](https://github.com/terraform-aws-modules) - AWS modules collection
 - [Terratest](https://terratest.gruntwork.io/docs/) - Go testing framework for Terraform
 - [Google Cloud Best Practices](https://docs.cloud.google.com/docs/terraform/best-practices/general-style-structure)
 - [AWS Terraform Best Practices](https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/introduction.html)
 
-### Development Tools
-- [pre-commit-terraform](https://github.com/antonbabenko/pre-commit-terraform) - Pre-commit hooks for Terraform
-- [terraform-docs](https://terraform-docs.io/) - Generate documentation from Terraform modules
+### Development tools
+- [pre-commit-terraform](https://github.com/antonbabenko/pre-commit-terraform) - pre-commit hooks for Terraform
+- [terraform-docs](https://terraform-docs.io/) - generate documentation from modules
 - [terraform-switcher](https://github.com/warrensbox/terraform-switcher) - Terraform version manager
 - [TFLint](https://github.com/terraform-linters/tflint) - Terraform linter
-- [Trivy](https://github.com/aquasecurity/trivy) - Security scanner for IaC
+- [Trivy](https://github.com/aquasecurity/trivy) - IaC security scanner
 
 ## License
 

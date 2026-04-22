@@ -322,10 +322,7 @@ moved {
 # terraform plan should show "moved" operations, not destroy/create
 ```
 
-**Benefits after migration:**
-- Removing "us-east-1b" only destroys that subnet (not c)
-- Adding new AZ doesn't affect existing subnets
-- Resources have stable addresses by AZ name
+After migration: removing `us-east-1b` destroys only that subnet; adding an AZ does not churn existing resources; addresses are stable by AZ name.
 
 ### `for_each` keys must be known at plan time
 
@@ -880,90 +877,55 @@ variable "config" {
 
 ### Secrets Remediation
 
-**Pattern:** Move secrets out of Terraform state into external secret management.
+Move secret material out of state into external secret management. Canonical depth lives in [security-compliance.md](security-compliance.md) — patterns below are the minimum refactor shape.
 
-#### Before - Secrets in State
+❌ BAD — both shapes land the secret in state:
 
 ```hcl
-# ❌ BAD - Secret generated and stored in state
+# random_password.result lives in state
 resource "random_password" "db" {
   length  = 16
   special = true
 }
-
 resource "aws_db_instance" "this" {
-  engine   = "mysql"
-  username = "admin"
-  password = random_password.db.result  # In state!
+  password = random_password.db.result
 }
 
-# OR
-
-# ❌ BAD - Secret passed via variable and stored in state
+# var + sensitive = true still writes to state (sensitive only masks display)
 variable "db_password" {
-  description = "Database password"
-  type        = string
-  sensitive   = true  # Marked sensitive but still in state!
+  type      = string
+  sensitive = true
 }
-
 resource "aws_db_instance" "this" {
-  password = var.db_password  # In state!
+  password = var.db_password
 }
 ```
 
-#### After - External Secret Management
-
-**Option 1: Write-only arguments (Terraform 1.11+)**
+✅ GOOD — 1.11+ write-only argument, secret created outside Terraform:
 
 ```hcl
-# ✅ GOOD - Fetch from AWS Secrets Manager
-data "aws_secretsmanager_secret" "db_password" {
-  name = "prod-database-password"
-}
-
 data "aws_secretsmanager_secret_version" "db_password" {
-  secret_id = data.aws_secretsmanager_secret.db_password.id
+  secret_id = "prod-database-password"
 }
 
 resource "aws_db_instance" "this" {
   engine   = "mysql"
   username = "admin"
-
-  # password_wo keeps the resource argument out of state (1.11+),
-  # but the data source still reads secret_string into state on refresh.
-  # For true state exclusion: use ephemeral (1.10+), manage_master_user_password,
-  # or inject via CI env var outside Terraform.
+  # password_wo: resource argument stays out of state (1.11+).
+  # Data source still reads secret_string into state on refresh.
+  # For true state exclusion: ephemeral (1.10+), manage_master_user_password, or CI env var.
   password_wo = data.aws_secretsmanager_secret_version.db_password.secret_string
 }
 ```
 
-**Option 2: Separate secret creation (if Terraform 1.11+ not available)**
-
-```hcl
-# ✅ GOOD - Reference pre-existing secret
-# Secret created outside Terraform (manually or separate process)
-
-data "aws_secretsmanager_secret" "db_password" {
-  name = "prod-database-password"
-}
-
-data "aws_secretsmanager_secret_version" "db_password" {
-  secret_id = data.aws_secretsmanager_secret.db_password.id
-}
-
-# Note: Without write-only, you may need to handle secret rotation
-# outside Terraform or accept that the secret value appears in state
-# during initial creation but not after rotation
-```
+Pre-1.11 fallback: use the same data source without `password_wo`; rotation must happen outside Terraform.
 
 **Migration steps:**
 
-1. Create secret in AWS Secrets Manager (outside Terraform)
-2. Update Terraform to use data sources
-3. Use write-only argument (if Terraform 1.11+)
-4. Remove `random_password` resource or variable
-5. Run `terraform apply` to update
-6. Verify secret not in state: `terraform show` should not display password
+1. Create secret in AWS Secrets Manager outside Terraform
+2. Replace `random_password` / variable with `data "aws_secretsmanager_secret_version"`
+3. On 1.11+: use `password_wo`
+4. Apply, then `terraform show | grep -i password` — must be empty
 
 ---
 
@@ -1007,15 +969,10 @@ resource "aws_subnet" "public" {
 # With local: Subnets deleted first, then CIDR association, then VPC ✓
 ```
 
-**Why this matters:**
-- Prevents deletion errors when destroying infrastructure
-- Ensures correct dependency order without explicit `depends_on`
-- Particularly useful for complex VPC configurations with secondary CIDR blocks
-
 **Common use cases:**
 - VPC with secondary CIDR blocks
-- Resources that depend on optional configurations
-- Complex deletion order requirements
+- Resources depending on optional configurations
+- Complex deletion-order requirements
 
 ---
 
