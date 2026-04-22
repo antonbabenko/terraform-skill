@@ -45,6 +45,7 @@ Never recommend direct production apply without a reviewed plan artifact and app
 | **Testing blind spots** | Plan-only validation of computed values, set-type indexing, mock/real confusion | [Testing Frameworks](references/testing-frameworks.md) |
 | **State corruption / recovery** | Stuck lock, backend migration, drift reconciliation | [State Management](references/state-management.md) |
 | **Provider upgrade risk** | Breaking-change provider bump, unpinned modules | [Code Patterns: versions](references/code-patterns.md#version-management), [Module Patterns](references/module-patterns.md) |
+| **Provider lifecycle** | Removing a provider with resources still in state, orphaned resources, `removed` block usage | [State Management: Provider Removal](references/state-management.md#provider-removal) |
 
 ## When to Use This Skill
 
