@@ -39,27 +39,110 @@ Comprehensive Terraform and OpenTofu best practices skill for Claude Code. Get i
 
 This plugin is distributed via Claude Code marketplace using `.claude-plugin/marketplace.json`.
 
-### Claude Code (Recommended)
+### Quick install (any agent)
+
+Universal installer via [skills.sh](https://skills.sh/) — works with any [Agent Skills](https://agentskills.io)-compatible tool:
+
+```bash
+npx skills add https://github.com/antonbabenko/terraform-skill
+```
+
+### Per-host instructions
+
+<!-- prettier-ignore-start -->
+
+<details>
+<summary>Claude Code</summary>
 
 ```bash
 /plugin marketplace add antonbabenko/terraform-skill
 /plugin install terraform-skill@antonbabenko
 ```
 
-### Manual Installation
+</details>
 
-Symlink a local clone into Claude's plugins directory:
+<details>
+<summary>Gemini CLI</summary>
 
 ```bash
-# Clone the repository
-git clone https://github.com/antonbabenko/terraform-skill
+gemini extensions install https://github.com/antonbabenko/terraform-skill
+```
 
-# Symlink into Claude's plugins directory
+Update with `gemini extensions update terraform-skill`.
+
+</details>
+
+<details>
+<summary>Cursor</summary>
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill.git ~/.cursor/skills/terraform-skill
+```
+
+Cursor auto-discovers skills from `.agents/skills/` and `.cursor/skills/`.
+
+</details>
+
+<details>
+<summary>Copilot</summary>
+
+```bash
+/plugin install https://github.com/antonbabenko/terraform-skill
+# or
+git clone https://github.com/antonbabenko/terraform-skill.git ~/.copilot/skills/terraform-skill
+```
+
+Copilot auto-discovers skills from `.copilot/skills/`.
+
+</details>
+
+<details>
+<summary>OpenCode</summary>
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill.git ~/.agents/skills/terraform-skill
+```
+
+OpenCode auto-discovers skills from `.agents/skills/`, `.opencode/skills/`, and `.claude/skills/`.
+
+</details>
+
+<details>
+<summary>Codex (OpenAI)</summary>
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill.git ~/.agents/skills/terraform-skill
+```
+
+Codex auto-discovers skills from `~/.agents/skills/` and `.agents/skills/`. Update with `cd ~/.agents/skills/terraform-skill && git pull`.
+
+</details>
+
+<details>
+<summary>Antigravity</summary>
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill.git ~/.antigravity/skills/terraform-skill
+```
+
+Update with `cd ~/.antigravity/skills/terraform-skill && git pull`.
+
+</details>
+
+<details>
+<summary>Manual (symlink local clone)</summary>
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill
 mkdir -p ~/.claude/plugins
 ln -s "$(pwd)/terraform-skill" ~/.claude/plugins/terraform-skill
 ```
 
 Claude Code autodiscovers the skill at `skills/terraform-skill/SKILL.md` on next launch. Edits to the clone are picked up live.
+
+</details>
+
+<!-- prettier-ignore-end -->
 
 ### Verify Installation
 
