@@ -1190,6 +1190,39 @@ terraform plan
 terraform apply -refresh-only
 ```
 
+### Provider Removal
+
+Terraform calls the provider plugin's `Destroy` RPC during apply. Keep the provider installed until every resource for that provider is destroyed or removed from state.
+
+| Goal | Use | Tradeoff |
+|------|-----|----------|
+| Remove provider and destroy the real resource | Two-phase removal (default) | Safe; requires `apply` |
+| Remove provider and keep the real resource | `removed` block (Terraform 1.7+, OpenTofu 1.7+) | Declarative; real resource stays but becomes unmanaged |
+| Remove from state manually | `terraform state rm <addr>` | Orphans the real resource; use only when intentionally abandoning |
+
+**Two-phase removal**
+
+1. **Phase 1 — destroy resources, keep provider:** Delete resource blocks from config (or mark for destruction). Keep the `provider` block and `required_providers` entry. Run `terraform plan` and confirm target resources show `destroy`. Run `terraform apply`. Run `terraform state list` and verify no resources remain for that provider.
+2. **Phase 2 — remove provider:** Remove the `provider` block and the `required_providers` entry. Run `terraform init`. Run `terraform plan` and expect no changes and no errors.
+
+**`removed` block**
+
+```hcl
+removed {
+  from = vault_policy.ops
+
+  lifecycle {
+    destroy = false
+  }
+}
+```
+
+**Rules**
+
+- ❌ Remove the provider block first: plan cannot resolve the resource type → hard error.
+- ✅ Same rule applies to provider aliases and multi-provider modules.
+- ✅ Plain `terraform init` after removal; `-upgrade` is for bumping existing providers, not required here.
+
 ---
 
 ## Multi-Team State Isolation
