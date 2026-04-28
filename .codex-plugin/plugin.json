@@ -1,0 +1,37 @@
+{
+  "author": {
+    "name": "Anton Babenko",
+    "url": "https://github.com/antonbabenko"
+  },
+  "description": "Terraform and OpenTofu best-practices skill for writing, reviewing, debugging, testing, CI, scans, and state operations.",
+  "homepage": "https://github.com/antonbabenko/terraform-skill",
+  "interface": {
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "category": "Development",
+    "developerName": "Anton Babenko",
+    "displayName": "Terraform Skill",
+    "longDescription": "Diagnose-first Terraform and OpenTofu guidance with version-aware guardrails for module design, testing strategy, CI/CD workflows, security scanning, compliance checks, and state management.",
+    "shortDescription": "Terraform and OpenTofu guidance for modules, tests, CI, scans, and state operations.",
+    "websiteURL": "https://github.com/antonbabenko/terraform-skill"
+  },
+  "keywords": [
+    "ci-cd",
+    "iac",
+    "infrastructure-as-code",
+    "modules",
+    "opentofu",
+    "security-scanning",
+    "state-management",
+    "terraform",
+    "testing"
+  ],
+  "license": "Apache-2.0",
+  "name": "terraform-skill",
+  "repository": "https://github.com/antonbabenko/terraform-skill",
+  "skills": "./skills",
+  "version": "1.8.0"
+}
