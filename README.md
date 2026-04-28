@@ -125,6 +125,24 @@ git clone https://github.com/antonbabenko/terraform-skill.git ~/.agents/skills/t
 
 Codex auto-discovers skills from `~/.agents/skills/` and `.agents/skills/`. Update with `cd ~/.agents/skills/terraform-skill && git pull`.
 
+Or add the following lines to your `~/.agents/plugins/marketplace.json` file under `plugins[]` to install this skill as a plugin:
+
+```json
+{
+  "category": "Productivity",
+  "name": "terraform-skill",
+  "policy": {
+    "authentication": "ON_INSTALL",
+    "installation": "AVAILABLE"
+  },
+  "source": {
+    "ref": "master",
+    "source": "url",
+    "url": "git@github.com:antonbabenko/terraform-skill.git"
+  }
+}
+```
+
 </details>
 
 <details>
