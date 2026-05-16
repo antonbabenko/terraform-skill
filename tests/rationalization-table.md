@@ -63,7 +63,7 @@ This document has two parts:
 - **Total surfaces tracked:** 17
 - **Covered (`✅`):** 16
 - **Partial (`◐`):** 0
-- **Open gaps (`❌`):** 1 (row 16 — provisioners)
+- **Open gaps (`❌`):** 1 (row 16 - provisioners)
 
 ### Priority Gaps (❌ rows)
 
@@ -463,7 +463,7 @@ Agents are creative. New rationalizations surface over time. Add them to the cov
 
 ### Overall progress
 
-- **Surfaces tracked:** 16
-- **Scenarios exercising each:** 16 (one-to-one in `baseline-scenarios.md`)
-- **Covered:** 15
-- **Open:** 1 (provisioners — row 16)
+- **Surfaces tracked:** 17
+- **Scenarios exercising each:** 17 (one-to-one in `baseline-scenarios.md`)
+- **Covered:** 16
+- **Open:** 1 (provisioners - row 16)
