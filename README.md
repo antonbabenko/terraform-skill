@@ -43,7 +43,10 @@ Terraform and OpenTofu best-practices skill for AI coding agents (Claude Code, C
 
 ## Installation
 
-This plugin is distributed via Claude Code marketplace using `.claude-plugin/marketplace.json`.
+Distributed through the single `antonbabenko/agent-plugins` Claude Code
+marketplace (terraform-skill is listed there as an external plugin). Do not
+also add `antonbabenko/terraform-skill` as a marketplace - both declare the
+same marketplace name and would collide.
 
 ### Quick install (any agent)
 
@@ -61,7 +64,7 @@ npx skills add https://github.com/antonbabenko/terraform-skill
 <summary>Claude Code</summary>
 
 ```bash
-/plugin marketplace add antonbabenko/terraform-skill
+/plugin marketplace add antonbabenko/agent-plugins
 /plugin install terraform-skill@antonbabenko
 ```
 
