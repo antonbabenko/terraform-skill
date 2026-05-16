@@ -5,7 +5,7 @@
 [![OpenTofu](https://img.shields.io/badge/OpenTofu-1.6+-FFD814)](https://opentofu.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Terraform and OpenTofu best-practices skill for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, and others). Covers testing strategies, module patterns, CI/CD workflows, and production infrastructure code.
+A best-practices skill for Terraform and OpenTofu, for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, and more). It helps the agent test code, structure modules, set up CI/CD, and write production infrastructure code.
 
 ## What this skill provides
 
@@ -43,14 +43,14 @@ Terraform and OpenTofu best-practices skill for AI coding agents (Claude Code, C
 
 ## Installation
 
-Distributed through the single `antonbabenko/agent-plugins` Claude Code
-marketplace (terraform-skill is listed there as an external plugin). Do not
-also add `antonbabenko/terraform-skill` as a marketplace - both declare the
-same marketplace name and would collide.
+Installed through one Claude Code marketplace, `antonbabenko/agent-plugins`
+(terraform-skill is listed there as an external plugin). Do not also add
+`antonbabenko/terraform-skill` as a marketplace - both use the same marketplace
+name and will clash.
 
 ### Quick install (any agent)
 
-Universal installer via [skills.sh](https://skills.sh/) — works with any [Agent Skills](https://agentskills.io)-compatible tool:
+Works with any [Agent Skills](https://agentskills.io)-compatible tool, via [skills.sh](https://skills.sh/):
 
 ```bash
 npx skills add https://github.com/antonbabenko/terraform-skill
@@ -171,21 +171,22 @@ Install the `code-intelligence` plugin alongside this one:
 /plugin install code-intelligence@antonbabenko
 ```
 
-It carries the generic, language-agnostic navigation discipline (LSP vs
-exact-text vs fuzzy search, position-anchored calls, degradation gate,
-tool-substitution disclosure) that terraform-skill specializes for terraform-ls.
+It holds the general, any-language rules for navigating code (when to use a
+language server, plain text search, or fuzzy search; how to anchor a lookup to
+a position; what to do when a tool fails; saying so when one tool is swapped
+for another). terraform-skill is the Terraform-specific version of those rules.
 Why install it:
 
-- **Fewer tokens** - the discipline lives in one place; the agent loads it
-  on demand instead of carrying it in every language skill.
-- **More precise** - semantic navigation (definitions, references) over blind
-  text grep; renames and refactors that do not miss or over-match.
-- **Quicker** - the right tool first time (LSP vs `rg` vs fuzzy) instead of
-  retrying, plus first-line disclosure when a tool is substituted.
+- **Fewer tokens** - the rules live in one place. The agent loads them when
+  needed instead of repeating them in every language skill.
+- **More accurate** - it finds definitions and references by meaning, not by
+  plain text matching, so renames and refactors do not miss spots or change
+  the wrong ones.
+- **Faster** - it picks the right tool the first time instead of retrying,
+  and says up front when it had to use a different one.
 
-terraform-skill is self-contained and works without it. The skill name is not
-globally unique; if a `code-intelligence` skill is active, confirm it is the
-one from
+terraform-skill works on its own without it. The name `code-intelligence` is
+not unique; if a `code-intelligence` skill is active, check it is the one from
 [antonbabenko/agent-plugins](https://github.com/antonbabenko/agent-plugins).
 
 ## Quick start examples
@@ -253,32 +254,32 @@ Side-by-side DO vs DON'T examples for variable naming, resource naming, module c
 
 ## Code intelligence (optional)
 
-The skill works without a language server. For semantic navigation (go to
-definition, find references, document outline, hover) it can also use
+The skill works without a language server. To jump to a definition, find
+references, outline a file, or show hover docs, it can also use
 [terraform-ls](https://github.com/hashicorp/terraform-ls), HashiCorp's official
 Terraform language server.
 
-- **Optional.** Without terraform-ls the skill degrades to text search (`rg`)
-  plus file reads. Nothing breaks; results are text matches instead of
-  semantic ones.
-- **Prerequisite.** terraform-ls needs a local `terraform` (or `tofu`) binary
-  on `PATH` and `terraform init` run in the workspace before cross-module and
-  provider symbols resolve.
-- **Install.** Download from the upstream
-  [terraform-ls releases](https://github.com/hashicorp/terraform-ls/releases),
-  or enable it through your editor or agent host's own language-server
-  mechanism. Use the version your host supports rather than pinning a binary
-  URL in docs.
+- **Optional.** Without terraform-ls the skill falls back to text search
+  (`rg`) plus reading files. Nothing breaks; you get text matches instead of
+  matches by meaning.
+- **Needs.** A local `terraform` (or `tofu`) binary on `PATH`, and
+  `terraform init` run in the workspace, before it can resolve names across
+  modules and providers.
+- **Install.** Get it from the
+  [terraform-ls releases](https://github.com/hashicorp/terraform-ls/releases)
+  page, or turn it on through your editor or agent host. Use whatever version
+  your host supports.
 
-Navigation tips the skill applies:
+How the skill uses it:
 
-- Use the language server for symbol relationships; use `rg` + read for exact
-  text, known names, `.tfvars`, comments, and non-HCL files.
-- Language-server calls are position-anchored: locate an occurrence first,
-  then query at that position.
-- terraform-ls has no rename provider. Renaming a variable/local/output is a
-  manual find-references-then-edit pass; renaming a resource or module address
-  uses a `moved` block, not a text replace.
+- Use the language server to follow a name to where it is defined or used; use
+  `rg` plus reading files for exact text, known names, `.tfvars`, comments, and
+  non-HCL files.
+- Point the language server at a spot in the file first (find an occurrence,
+  then ask about that position).
+- terraform-ls cannot rename for you. To rename a variable, local, or output:
+  find every reference, then edit each by hand. To rename a resource or module
+  address: use a `moved` block, not a text replace.
 
 ## Contributing
 
