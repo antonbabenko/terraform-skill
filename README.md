@@ -251,6 +251,28 @@ Navigation tips the skill applies:
   manual find-references-then-edit pass; renaming a resource or module address
   uses a `moved` block, not a text replace.
 
+### Generic discipline (any language)
+
+This skill's navigation guidance is the Terraform specialization of a
+language-agnostic discipline (LSP vs exact-text vs fuzzy precedence,
+position-anchored calls, degradation gate, tool-substitution disclosure,
+anti-phantom-shim). The terraform-skill content is self-contained and works on
+its own. For that discipline across any language, install the
+`code-intelligence` plugin:
+
+```bash
+/plugin marketplace add antonbabenko/agent-plugins
+/plugin install code-intelligence@antonbabenko
+```
+
+- Skills are not loaded by being mentioned in another skill. Each skill
+  triggers on its own description; installing the plugin is what makes
+  `code-intelligence` available.
+- The skill name is not globally unique. If a `code-intelligence` skill is
+  active, confirm it is the one from
+  [antonbabenko/agent-plugins](https://github.com/antonbabenko/agent-plugins)
+  before relying on it; third-party skills with the same name may differ.
+
 ## Contributing
 
 See [CLAUDE.md](CLAUDE.md) for skill development guidelines, content structure, how to propose improvements, and the validation approach.
