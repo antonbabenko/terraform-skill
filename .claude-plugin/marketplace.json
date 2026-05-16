@@ -24,7 +24,9 @@
         "testing",
         "ci-cd",
         "security-scanning",
-        "modules"
+        "modules",
+        "lsp",
+        "terraform-ls"
       ],
       "version": "1.7.0"
     }

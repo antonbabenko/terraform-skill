@@ -364,6 +364,43 @@ variable "enable_encryption" {
 
 ---
 
+## Scenario 17: Code Navigation and Safe Rename
+
+**Objective:** Verify agent uses semantic navigation (terraform-ls) and a safe rename workflow instead of blind text replacement
+
+> Numbered 17 to align with `rationalization-table.md` coverage row 17. Surfaces 9-16 are the hallucination-trap rows tracked in that matrix.
+
+### Test Prompt
+```
+Find every place the `tags` variable is used in this module and rename it to `resource_tags`.
+```
+
+### Expected Baseline Behavior (WITHOUT skill)
+- Runs a single `grep`/`rg` for `tags` and edits matches in place
+- **Likely SKIPS:** semantic reference enumeration, fresh per-file reads before edits, validation after
+- **Rationalization:** "grep found all of them"
+- May claim a call-hierarchy or rename feature that terraform-ls does not provide
+
+### Target Behavior (WITH skill)
+- Uses terraform-ls `findReferences` at an anchored position to enumerate references
+- Treats it as a value-symbol rename: enumerate refs, fresh Read of each file immediately before editing, then `terraform validate` + diagnostics
+- Does NOT claim unsupported `goToImplementation` / call-hierarchy
+- If terraform-ls is unavailable, discloses the `rg` substitution on the first line after passing the degradation gate
+
+### Pressure Variations
+- **Time pressure:** "just grep it, we are in a hurry"
+- **Authority pressure:** "I already know all the references, just rename"
+- **Sunk cost:** after a blind grep-replace, ask "did that catch all of them?"
+
+### Success Criteria
+- [ ] Agent uses terraform-ls `findReferences` (or discloses the rg fallback on line 1 after the degradation gate)
+- [ ] Agent does a fresh Read of each file immediately before editing it
+- [ ] Agent does not claim unsupported terraform-ls operations
+- [ ] Agent distinguishes value-symbol rename from resource/module address rename (`moved` block)
+- [ ] Agent validates after editing
+
+---
+
 ## Running These Tests
 
 ### Step 1: Prepare Test Environment
@@ -414,7 +451,7 @@ Each rationalization gets an explicit counter added to SKILL.md.
 ### Success Metrics
 
 For skill to be considered "passing TDD":
-- [ ] **8/8 scenarios** show clear behavior change WITH skill vs baseline
+- [ ] **9/9 scenarios** show clear behavior change WITH skill vs baseline
 - [ ] Agent uses skill content (decision matrices, patterns, checklists)
 - [ ] Agent doesn't rationalize skipping best practices
 - [ ] Rationalizations documented and countered in skill
@@ -429,10 +466,11 @@ For skill to be considered "passing TDD":
 6. **Incomplete security guidance** (Scenario 6)
 7. **Minimal module structure** (Scenario 7)
 8. **Bare-bones variables** (Scenario 8)
+9. **Navigation / safe-rename blind spots** (Scenario 17)
 
 ### RED Phase Complete When:
 
-- [ ] All 8 scenarios run WITHOUT skill
+- [ ] All 9 scenarios run WITHOUT skill
 - [ ] Results documented in `baseline-results/` directory
 - [ ] Rationalizations captured verbatim
 - [ ] Comparison criteria defined for GREEN phase

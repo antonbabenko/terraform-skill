@@ -222,6 +222,35 @@ Side-by-side DO vs DON'T examples for variable naming, resource naming, module c
 - Terraform 1.0+ or OpenTofu 1.6+
 - Optional: [Terraform MCP server](https://github.com/hashicorp/terraform-mcp-server) for registry integration
 
+## Code intelligence (optional)
+
+The skill works without a language server. For semantic navigation (go to
+definition, find references, document outline, hover) it can also use
+[terraform-ls](https://github.com/hashicorp/terraform-ls), HashiCorp's official
+Terraform language server.
+
+- **Optional.** Without terraform-ls the skill degrades to text search (`rg`)
+  plus file reads. Nothing breaks; results are text matches instead of
+  semantic ones.
+- **Prerequisite.** terraform-ls needs a local `terraform` (or `tofu`) binary
+  on `PATH` and `terraform init` run in the workspace before cross-module and
+  provider symbols resolve.
+- **Install.** Download from the upstream
+  [terraform-ls releases](https://github.com/hashicorp/terraform-ls/releases),
+  or enable it through your editor or agent host's own language-server
+  mechanism. Use the version your host supports rather than pinning a binary
+  URL in docs.
+
+Navigation tips the skill applies:
+
+- Use the language server for symbol relationships; use `rg` + read for exact
+  text, known names, `.tfvars`, comments, and non-HCL files.
+- Language-server calls are position-anchored: locate an occurrence first,
+  then query at that position.
+- terraform-ls has no rename provider. Renaming a variable/local/output is a
+  manual find-references-then-edit pass; renaming a resource or module address
+  uses a `moved` block, not a text replace.
+
 ## Contributing
 
 See [CLAUDE.md](CLAUDE.md) for skill development guidelines, content structure, how to propose improvements, and the validation approach.

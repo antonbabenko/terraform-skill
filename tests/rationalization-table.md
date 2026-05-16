@@ -56,11 +56,12 @@ This document has two parts:
 | 14 | OIDC trust policy with wildcarded `sub` or missing `aud` | §14 OIDC audience mismatch | `references/ci-cd-workflows.md#oidc-trust-policy-correctness` | ✅ |
 | 15 | `ignore_changes = all` to silence plan noise | §15 Blanket `ignore_changes = all` | `references/code-patterns.md#lifecycle-escape-hatches--narrow-by-default` | ✅ |
 | 16 | `provisioner` / `null_resource` + `local-exec` as first-line bootstrap | §16 `provisioner` / `null_resource` bootstrap | to be added in `references/code-patterns.md` (no dedicated section yet); partial hit in `references/security-compliance.md` LLM checklist | ❌ |
+| 17 | Semantic navigation skipped; value-symbol rename done as blind text replace; unsupported terraform-ls op claimed | §17 Code Navigation and Safe Rename | `SKILL.md` Code Intelligence + `references/code-intelligence-lsp.md#terraform-ls-capability-matrix` | ✅ |
 
 ### Coverage Summary
 
-- **Total surfaces tracked:** 16
-- **Covered (`✅`):** 15
+- **Total surfaces tracked:** 17
+- **Covered (`✅`):** 16
 - **Partial (`◐`):** 0
 - **Open gaps (`❌`):** 1 (row 16 — provisioners)
 

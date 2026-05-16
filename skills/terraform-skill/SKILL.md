@@ -46,6 +46,7 @@ Never recommend direct production apply without a reviewed plan artifact and app
 | **State corruption / recovery** | Stuck lock, backend migration, drift reconciliation | [State Management](references/state-management.md) |
 | **Provider upgrade risk** | Breaking-change provider bump, unpinned modules | [Code Patterns: versions](references/code-patterns.md#version-management), [Module Patterns](references/module-patterns.md) |
 | **Provider lifecycle** | Removing a provider with resources still in state, orphaned resources, `removed` block usage | [State Management: Provider Removal](references/state-management.md#provider-removal) |
+| **Navigation / safe-rename blind spots** | Cannot locate symbol defs/refs semantically, value-symbol rename done as blind text replace, grep-only refactor missing refs, hallucinated `rg` shim | [Code Intelligence](references/code-intelligence-lsp.md#terraform-ls-capability-matrix) |
 
 ## When to Use This Skill
 
@@ -258,6 +259,26 @@ Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature
 - **1.11+**: `write_only` arguments for secret handling keep credentials out of state.
 - **Terraform vs OpenTofu**: both supported. For licensing, governance, and feature delta, see [Quick Reference: Terraform vs OpenTofu](references/quick-reference.md#terraform-vs-opentofu-comparison).
 
+## Code Intelligence (terraform-ls)
+
+Semantic navigation for HCL. terraform-ls is optional; without it every row below degrades to a disclosed `rg` + Read fallback.
+
+| Goal | Use | Tradeoff |
+|------|-----|----------|
+| Find definition / all references | terraform-ls `goToDefinition` / `findReferences` | Needs `init` + a position anchor |
+| Rename value symbol (var/local/output/provider alias) | Manual: `findReferences` -> per-file fresh Read -> edit -> `validate` | No rename provider |
+| Rename resource/module address | `moved` block + `plan` shows 0 destroy | Text rename forces destroy/recreate |
+| Exact text / known name / `.tfvars` / non-HCL | `rg` + Read | No semantic scope |
+
+✅ Supported: `goToDefinition`, `findReferences`, `documentSymbol`, `hover`, `workspaceSymbol`.
+❌ Unsupported: `goToImplementation`, call hierarchy, rename provider. Do not call these then report their absence as a finding.
+
+- ✅ Prereq: local `terraform`/`tofu` on PATH, `terraform init` run; cold start may need one retry.
+- ✅ LSP calls are position-anchored (`file:line:character`) - anchor with `rg` first, never symbol-name-only.
+- ❌ Do not claim "LSP broken, using rg" until the [Degradation Gate](references/code-intelligence-lsp.md#degradation-gate) passes; disclose any tool substitution on the first line.
+
+Depth: [Code Intelligence](references/code-intelligence-lsp.md#terraform-ls-capability-matrix).
+
 ## Reference Files
 
 Progressive disclosure — essentials here, depth on demand:
@@ -268,6 +289,7 @@ Progressive disclosure — essentials here, depth on demand:
 - [Security & Compliance](references/security-compliance.md) — trivy/checkov, secrets handling, compliance mappings
 - [State Management](references/state-management.md) — backends, locking, migration, multi-team, recovery
 - [Code Patterns](references/code-patterns.md) — block ordering, `count`/`for_each` deep dive, modern features, version management, locals
+- [Code Intelligence](references/code-intelligence-lsp.md) - terraform-ls capabilities, position-anchored calls, manual rename, degradation gate
 - [Quick Reference](references/quick-reference.md) — command cheat sheets, flowcharts, troubleshooting
 
 ## License
