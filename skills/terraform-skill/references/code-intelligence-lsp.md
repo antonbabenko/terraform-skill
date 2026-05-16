@@ -7,11 +7,19 @@ terraform-ls is optional. Without it, every operation below degrades to a
 disclosed `rg` + Read fallback (see Degradation Gate). It is not a hard
 dependency of this skill.
 
-The generic, language-agnostic form of this discipline (precedence, position
-anchoring, degradation gate, disclosure, anti-phantom-shim) is the standalone
-`code-intelligence` skill. This file is its terraform-ls specialization
-(capability matrix, `terraform init`, `moved` blocks, `.tfvars`) and stays
-complete on its own if that skill is not installed.
+This file is the terraform-ls specialization (capability matrix,
+`terraform init`, `moved` blocks, `.tfvars`) and is complete on its own -
+apply it directly; correctness never depends on another skill loading.
+
+The generic, language-agnostic form (precedence, position anchoring,
+degradation gate, disclosure, anti-phantom-shim) is the `code-intelligence`
+plugin in the `antonbabenko` marketplace
+(https://github.com/antonbabenko/agent-plugins , install
+`/plugin install code-intelligence@antonbabenko`). It does NOT auto-load from
+this reference: Claude Code skills trigger on their own `description`, not from
+mentions elsewhere. If a skill named `code-intelligence` is active, verify it
+is this one (the name is not globally unique - third-party skills with the same
+name may behave differently) before deferring to it for non-Terraform code.
 
 Security: `terraform init` may download modules and providers over the network.
 Do not auto-run it in untrusted working directories. terraform-ls indexes local
