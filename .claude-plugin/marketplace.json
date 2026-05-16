@@ -3,7 +3,7 @@
   "owner": {
     "name": "Anton Babenko"
   },
-  "version": "1.8.0",
+  "version": "1.9.0",
   "metadata": {
     "description": "Use when writing, reviewing, or debugging Terraform/OpenTofu modules, tests, CI, scans, or state ops - diagnoses failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards.",
     "repository": "https://github.com/antonbabenko/terraform-skill",
