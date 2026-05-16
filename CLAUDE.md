@@ -17,9 +17,10 @@ terraform-skill/
 ├── .claude-plugin/marketplace.json  # Plugin metadata (version synced automatically)
 ├── skills/
 │   └── terraform-skill/             # Skill autodiscovered by Claude Code plugin system
-│       ├── SKILL.md                 # Core skill file (~277 lines)
+│       ├── SKILL.md                 # Core skill file (~299 lines)
 │       └── references/              # Reference files loaded on demand
 │           ├── ci-cd-workflows.md
+│           ├── code-intelligence-lsp.md
 │           ├── code-patterns.md
 │           ├── module-patterns.md
 │           ├── quick-reference.md
@@ -125,7 +126,7 @@ When adding content, ask: **decision framework or key pattern → SKILL.md; deta
 - **Scannable format:** tables > bullets > prose
 - **✅ DO / ❌ DON'T** side-by-side for non-obvious patterns
 - **Version-specific features** clearly marked (e.g., `Terraform 1.6+`)
-- **Token budget:** SKILL.md target <300 lines (see LLM Consumption Rules); currently ~277
+- **Token budget:** SKILL.md target <300 lines (see LLM Consumption Rules); currently ~299
 
 ### LLM Consumption Rules (enforce in every PR review)
 
