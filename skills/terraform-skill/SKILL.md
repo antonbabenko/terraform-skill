@@ -263,6 +263,8 @@ Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature
 
 Semantic navigation for HCL. terraform-ls is optional; without it every row below degrades to a disclosed `rg` + Read fallback.
 
+The language-agnostic discipline (LSP-vs-text-vs-fuzzy precedence, position anchoring, degradation gate, tool-substitution disclosure, anti-phantom-shim) is formalized in the standalone `code-intelligence` skill; this section is its terraform-ls extension and stays self-contained if that skill is absent.
+
 | Goal | Use | Tradeoff |
 |------|-----|----------|
 | Find definition / all references | terraform-ls `goToDefinition` / `findReferences` | Needs `init` + a position anchor |

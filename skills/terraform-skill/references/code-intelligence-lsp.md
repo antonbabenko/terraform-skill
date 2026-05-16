@@ -7,6 +7,12 @@ terraform-ls is optional. Without it, every operation below degrades to a
 disclosed `rg` + Read fallback (see Degradation Gate). It is not a hard
 dependency of this skill.
 
+The generic, language-agnostic form of this discipline (precedence, position
+anchoring, degradation gate, disclosure, anti-phantom-shim) is the standalone
+`code-intelligence` skill. This file is its terraform-ls specialization
+(capability matrix, `terraform init`, `moved` blocks, `.tfvars`) and stays
+complete on its own if that skill is not installed.
+
 Security: `terraform init` may download modules and providers over the network.
 Do not auto-run it in untrusted working directories. terraform-ls indexes local
 source only; it does not execute the configuration.
