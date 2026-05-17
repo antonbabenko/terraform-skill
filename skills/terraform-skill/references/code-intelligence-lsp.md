@@ -11,9 +11,45 @@ Self-contained terraform-ls specialization (capability matrix,
 `terraform init`, `moved` blocks, `.tfvars`) of a generic code-intelligence
 discipline - apply it directly.
 
+Recommended companion: the `code-intelligence` plugin (same
+`antonbabenko/agent-plugins` marketplace) is the single source of truth for the
+generic discipline - tool precedence, position anchoring, the two-case
+degradation gate, the first-line disclosure format, anti-phantom-shim proof -
+and ships `/code-intelligence:doctor`. When it is installed, defer to its
+generic protocol; the Terraform-specific capability matrix, routing, rename
+workflow, and operational notes below remain owned here and work without it.
+
 Security: `terraform init` may download modules and providers over the network.
 Do not auto-run it in untrusted working directories. terraform-ls indexes local
 source only; it does not execute the configuration.
+
+### Setup (host prerequisites)
+
+terraform-ls is optional; everything below degrades to a disclosed `rg` + Read
+fallback without it. To get the semantic tier:
+
+1. Install the language server:
+   - macOS: `brew install hashicorp/tap/terraform-ls`
+   - Any (Go): `go install github.com/hashicorp/terraform-ls@latest`
+   - Verify: `terraform-ls --version`
+2. Enable the agent's LSP tool. In Claude Code, export `ENABLE_LSP_TOOL=1`
+   in your shell rc and reload; LSP tools require explicit opt-in.
+3. Install an LSP transport that exposes a POSITION-based terraform-ls tool
+   (`filePath`, `line`, `character`). One option is the third-party
+   `terraform-ls` bridge from the `boostvolt/claude-code-lsps` marketplace:
+   `/plugin marketplace add boostvolt/claude-code-lsps` then
+   `/plugin install terraform-ls@claude-code-lsps`. If the only LSP tool
+   exposed takes a bare symbol name, the transport is wrong/old - reinstall
+   and fully restart the agent.
+4. Fully restart the agent (kill the process, not just a new session) -
+   plugins loading without a clean restart is the most common silent failure.
+5. Verify readiness. If the companion `code-intelligence` plugin is installed,
+   run `/code-intelligence:doctor` (checks `rg` + language servers including
+   terraform-ls). Otherwise verify by hand: `rg --version` prints
+   `ripgrep x.y.z`, `terraform-ls --version` succeeds, and a `documentSymbol`
+   call on a `variables.tf` returns symbols (liveness probe). An initialized
+   workspace (`terraform init` run, `.terraform/` present) is required for
+   cross-module and provider resolution.
 
 ### terraform-ls Capability Matrix
 

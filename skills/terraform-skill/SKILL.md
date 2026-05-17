@@ -263,7 +263,7 @@ Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature
 
 Semantic navigation for HCL. terraform-ls is optional; without it every row below degrades to a disclosed `rg` + Read fallback.
 
-Self-contained terraform-ls layer of a generic code-intelligence discipline - apply the rows below directly.
+Self-contained terraform-ls layer of a generic code-intelligence discipline - apply the rows below directly. Recommended companion: the `code-intelligence` plugin (same `antonbabenko/agent-plugins` marketplace) carries the generic discipline (position anchoring, degradation gate, disclosure format, anti-phantom-shim) and ships `/code-intelligence:doctor` for readiness. If it is installed, defer to its generic protocol; this skill stays fully self-contained without it.
 
 | Goal | Use | Tradeoff |
 |------|-----|----------|
