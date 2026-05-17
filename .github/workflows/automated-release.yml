@@ -42,8 +42,10 @@ jobs:
           preset: 'angular'
           tag-prefix: 'v'
           output-file: 'CHANGELOG.md'
+          version-file: './version.json'
+          version-path: 'version'
           skip-on-empty: 'false'
-          skip-version-file: 'true'
+          skip-version-file: 'false'
           skip-commit: 'false'
 
       # 2b. Sync plugin version, SKILL.md version, and git ref
@@ -103,7 +105,7 @@ jobs:
           # Commit the sync
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add skills/terraform-skill/SKILL.md
+          git add version.json skills/terraform-skill/SKILL.md
           git commit --amend --no-edit
           git push --force-with-lease
 
