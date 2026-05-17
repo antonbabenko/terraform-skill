@@ -326,7 +326,7 @@ git commit -m "docs: improve testing strategy documentation"
 git commit -m "chore: update workflow dependencies"
 ```
 
-Commit type determines the version bump, the changelog group, and whether a release is cut on merge to master. The release workflow updates the version in marketplace.json (marketplace root and plugin entry) and in SKILL.md frontmatter.
+Commit type determines the version bump, the changelog group, and whether a release is cut on merge to master. The release workflow updates the version in SKILL.md frontmatter (the single version source) and tags the release.
 
 ## Submitting Changes
 
@@ -379,7 +379,6 @@ Releases are automated from conventional commits:
 2. Workflow analyzes commits since the last release
 3. Workflow calculates the version bump (major/minor/patch)
 4. Workflow updates:
-   - `.claude-plugin/marketplace.json` (marketplace version, plugin version, git ref)
    - `skills/terraform-skill/SKILL.md` frontmatter (`metadata.version`)
    - `CHANGELOG.md` (generated from commits)
 5. Workflow creates the git tag and GitHub Release

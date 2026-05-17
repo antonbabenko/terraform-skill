@@ -42,10 +42,8 @@ jobs:
           preset: 'angular'
           tag-prefix: 'v'
           output-file: 'CHANGELOG.md'
-          version-file: './.claude-plugin/marketplace.json'
-          version-path: 'version'
           skip-on-empty: 'false'
-          skip-version-file: 'false'
+          skip-version-file: 'true'
           skip-commit: 'false'
 
       # 2b. Sync plugin version, SKILL.md version, and git ref
@@ -93,37 +91,9 @@ jobs:
           try:
               version = os.environ['VERSION']
 
-              # 1. Update marketplace.json
-              with open('.claude-plugin/marketplace.json', 'r') as f:
-                  data = json.load(f)
-
-              # Validate structure
-              if 'plugins' not in data or len(data['plugins']) == 0:
-                  raise ValueError("No plugins found in marketplace.json")
-
-              # Sync marketplace.json versions
-              data['plugins'][0]['version'] = version
-
-              # Validate marketplace.json synced state
-              if data['version'] != version:
-                  raise ValueError(f"Marketplace version {data['version']} != {version}")
-
-              with open('.claude-plugin/marketplace.json', 'w') as f:
-                  json.dump(data, f, indent=2)
-                  f.write('\n')
-
-              print(f"✅ Synced marketplace.json plugin version to {version}")
-
-              # 2. Update SKILL.md
+              # SKILL.md frontmatter is the single version source.
               skill_path = update_skill_version(version)
               print(f"✅ Synced {skill_path} metadata.version to {version}")
-
-              # 3. Final validation - all three versions match
-              print(f"\n📋 Version Sync Summary:")
-              print(f"   - marketplace.json root: {data['version']}")
-              print(f"   - marketplace.json plugins[0]: {data['plugins'][0]['version']}")
-              print(f"   - SKILL.md metadata: {version}")
-              print(f"   ✅ All versions synchronized to {version}")
 
           except Exception as e:
               print(f"❌ ERROR: Failed to sync versions: {e}")
@@ -133,7 +103,7 @@ jobs:
           # Commit the sync
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/marketplace.json skills/terraform-skill/SKILL.md
+          git add skills/terraform-skill/SKILL.md
           git commit --amend --no-edit
           git push --force-with-lease
 

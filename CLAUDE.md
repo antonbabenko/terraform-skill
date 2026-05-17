@@ -14,7 +14,6 @@ A **Claude Code skill** - executable documentation that Claude loads to provide 
 
 ```
 terraform-skill/
-├── .claude-plugin/marketplace.json  # Plugin metadata (version synced automatically)
 ├── skills/
 │   └── terraform-skill/             # Skill autodiscovered by Claude Code plugin system
 │       ├── SKILL.md                 # Core skill file (~299 lines)
@@ -88,10 +87,9 @@ Releases are **fully automated** from conventional commits on `master`:
 
 The release workflow automatically:
 - Bumps the version in `CHANGELOG.md`
-- Syncs versions across **three places** (must stay in sync):
-  1. `.claude-plugin/marketplace.json` → `version` (root)
-  2. `.claude-plugin/marketplace.json` → `plugins[0].version`
-  3. `skills/terraform-skill/SKILL.md` YAML frontmatter → `metadata.version`
+- Syncs `skills/terraform-skill/SKILL.md` YAML frontmatter
+  `metadata.version` (the single version source; the canonical version is the
+  git tag managed by the release pipeline)
 
 **Never manually edit version numbers** - the CI handles this.
 

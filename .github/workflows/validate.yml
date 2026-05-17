@@ -100,54 +100,6 @@ jobs:
             echo "✅ Size OK"
           fi
 
-      - name: Validate marketplace.json
-        run: |
-          python3 << 'EOF'
-          import json
-          import sys
-          import re
-
-          print("🔍 Validating marketplace.json...")
-
-          with open('.claude-plugin/marketplace.json', 'r') as f:
-              marketplace = json.load(f)
-
-          # Validate marketplace-level fields
-          required_marketplace = ['name', 'owner', 'version', 'plugins']
-          missing = [f for f in required_marketplace if f not in marketplace]
-
-          if missing:
-              print(f"❌ ERROR: Missing marketplace fields: {missing}")
-              sys.exit(1)
-
-          # Validate owner structure
-          if 'name' not in marketplace['owner']:
-              print("❌ ERROR: owner must have 'name'")
-              sys.exit(1)
-
-          # Validate version format
-          version = marketplace['version']
-          if not re.match(r'^\d+\.\d+\.\d+$', version):
-              print(f"❌ ERROR: Invalid marketplace version: {version}")
-              sys.exit(1)
-
-          # Validate plugins array
-          if not isinstance(marketplace['plugins'], list) or len(marketplace['plugins']) == 0:
-              print("❌ ERROR: 'plugins' must be a non-empty array")
-              sys.exit(1)
-
-          # Validate each plugin
-          for idx, plugin in enumerate(marketplace['plugins']):
-              required_plugin = ['name', 'description', 'source']
-              missing = [f for f in required_plugin if f not in plugin]
-
-              if missing:
-                  print(f"❌ ERROR: Plugin {idx} missing fields: {missing}")
-                  sys.exit(1)
-
-          print(f"✅ marketplace.json valid (v{version}, {len(marketplace['plugins'])} plugin(s))")
-          EOF
-
       - name: Check for Broken Links
         run: |
           echo "🔍 Checking internal links..."
