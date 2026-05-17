@@ -269,6 +269,9 @@ Terraform language server.
   [terraform-ls releases](https://github.com/hashicorp/terraform-ls/releases)
   page, or turn it on through your editor or agent host. Use whatever version
   your host supports.
+  - Claude Code: install it as an LSP plugin -
+    `/plugin marketplace add boostvolt/claude-code-lsps` then
+    `/plugin install terraform-ls@claude-code-lsps`.
 
 How the skill uses it:
 
