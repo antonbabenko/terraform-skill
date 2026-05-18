@@ -6,12 +6,16 @@ on:
       - 'skills/**'
       - '.claude-plugin/**'
       - '.codex-plugin/**'
+      - '.github/workflows/**'
+      - '.github/release/**'
   push:
     branches: [master, main]
     paths:
       - 'skills/**'
       - '.claude-plugin/**'
       - '.codex-plugin/**'
+      - '.github/workflows/**'
+      - '.github/release/**'
   workflow_dispatch:
 
 jobs:

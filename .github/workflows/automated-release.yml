@@ -47,110 +47,11 @@ jobs:
           skip-on-empty: 'false'
           skip-version-file: 'false'
           skip-commit: 'false'
-
-      # 2b. Sync version fields and git ref
-      # This ensures all version fields stay synchronized:
-      # - root version.json (updated by conventional-changelog-action above)
-      # - SKILL.md metadata.version (synced here)
-      # - .codex-plugin/plugin.json version (synced here, if present)
-      - name: Sync Plugin Version and SKILL.md
-        if: steps.changelog.outputs.skipped == 'false'
-        env:
-          VERSION: ${{ steps.changelog.outputs.version }}
-        run: |
-          python3 << 'EOF'
-          import json
-          import os
-          import sys
-
-          def update_skill_version(version):
-              """Update version in SKILL.md YAML frontmatter."""
-              skill_path = 'skills/terraform-skill/SKILL.md'
-
-              if not os.path.exists(skill_path):
-                  raise FileNotFoundError(f"{skill_path} not found")
-
-              with open(skill_path, 'r') as f:
-                  lines = f.readlines()
-
-              # Find and update version line in frontmatter (typically line 7)
-              updated = False
-              for i, line in enumerate(lines):
-                  # Match "  version: X.Y.Z" pattern (2 spaces indent)
-                  if line.strip().startswith('version:') and i < 10:  # Within frontmatter
-                      lines[i] = f'  version: {version}\n'
-                      updated = True
-                      break
-
-              if not updated:
-                  raise ValueError("Could not find version field in SKILL.md frontmatter")
-
-              with open(skill_path, 'w') as f:
-                  f.writelines(lines)
-
-              return skill_path
-
-          def update_codex_manifest(version):
-              """Mirror the version into .codex-plugin/plugin.json if present.
-
-              The Codex plugin host reads this manifest when the
-              agent-plugins marketplace resolves terraform-skill as a
-              url-source plugin. Keep its version in lockstep with the
-              SKILL.md single version source so it never goes stale.
-              """
-              manifest_path = '.codex-plugin/plugin.json'
-
-              if not os.path.exists(manifest_path):
-                  return None
-
-              with open(manifest_path, 'r') as f:
-                  lines = f.readlines()
-
-              updated = False
-              for i, line in enumerate(lines):
-                  # Top-level key only: exactly 2-space indent. Anchored so a
-                  # nested "version" key could never be matched by accident.
-                  if line.startswith('  "version":'):
-                      lines[i] = f'  "version": "{version}"\n'
-                      updated = True
-                      break
-
-              if not updated:
-                  raise ValueError(
-                      "Could not find version field in .codex-plugin/plugin.json")
-
-              with open(manifest_path, 'w') as f:
-                  f.writelines(lines)
-
-              return manifest_path
-
-          try:
-              version = os.environ['VERSION']
-
-              # SKILL.md frontmatter is the single version source.
-              skill_path = update_skill_version(version)
-              print(f"✅ Synced {skill_path} metadata.version to {version}")
-
-              manifest_path = update_codex_manifest(version)
-              if manifest_path:
-                  print(f"✅ Synced {manifest_path} version to {version}")
-              else:
-                  print("ℹ️  No .codex-plugin/plugin.json; skipped")
-
-          except Exception as e:
-              print(f"❌ ERROR: Failed to sync versions: {e}")
-              sys.exit(1)
-          EOF
-
-          # Commit the sync
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add version.json skills/terraform-skill/SKILL.md
-          if [ -f .codex-plugin/plugin.json ]; then
-            git add .codex-plugin/plugin.json
-          fi
-          git commit --amend --no-edit
-          git push --force-with-lease
+          skip-ci: 'true'
+          # Sync SKILL.md + .codex-plugin/plugin.json BEFORE the action's
+          # commit/tag so tag-pinned consumers get a matching tree. Replaces
+          # the old post-tag amend + force-push.
+          pre-commit: '.github/release/pre-commit.js'
 
       # 3. Create GitHub Release
       # Only run if a new version was created
