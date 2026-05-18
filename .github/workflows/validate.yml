@@ -96,8 +96,11 @@ jobs:
           python3 << 'EOF'
           import json
           import os
+          import re
           import sys
           import yaml
+
+          SEMVER = re.compile(r'^\d+\.\d+\.\d+$')
 
           manifest_path = '.codex-plugin/plugin.json'
           if not os.path.exists(manifest_path):
@@ -110,6 +113,18 @@ jobs:
 
           with open(manifest_path) as f:
               manifest_version = json.load(f).get('version')
+
+          # Both must exist and be real semver, not merely equal: equality
+          # alone passes when both are missing/empty.
+          for label, value in (
+              ('SKILL.md metadata.version', skill_version),
+              (f'{manifest_path} version', manifest_version),
+          ):
+              if not (isinstance(value, str) and SEMVER.match(value)):
+                  print(
+                      f"❌ ERROR: {label} is not a valid semver: {value!r}. "
+                      f"CI owns these; do not hand-edit (see CLAUDE.md).")
+                  sys.exit(1)
 
           if skill_version != manifest_version:
               print(
