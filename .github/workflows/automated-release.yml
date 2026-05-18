@@ -48,11 +48,11 @@ jobs:
           skip-version-file: 'false'
           skip-commit: 'false'
 
-      # 2b. Sync plugin version, SKILL.md version, and git ref
-      # This ensures all three version fields stay synchronized:
-      # - root version (updated by conventional-changelog-action above)
-      # - plugins[0].version (synced here)
+      # 2b. Sync version fields and git ref
+      # This ensures all version fields stay synchronized:
+      # - root version.json (updated by conventional-changelog-action above)
       # - SKILL.md metadata.version (synced here)
+      # - .codex-plugin/plugin.json version (synced here, if present)
       - name: Sync Plugin Version and SKILL.md
         if: steps.changelog.outputs.skipped == 'false'
         env:
@@ -90,12 +90,51 @@ jobs:
 
               return skill_path
 
+          def update_codex_manifest(version):
+              """Mirror the version into .codex-plugin/plugin.json if present.
+
+              The Codex plugin host reads this manifest when the
+              agent-plugins marketplace resolves terraform-skill as a
+              url-source plugin. Keep its version in lockstep with the
+              SKILL.md single version source so it never goes stale.
+              """
+              manifest_path = '.codex-plugin/plugin.json'
+
+              if not os.path.exists(manifest_path):
+                  return None
+
+              with open(manifest_path, 'r') as f:
+                  lines = f.readlines()
+
+              updated = False
+              for i, line in enumerate(lines):
+                  # Top-level "  "version": "X.Y.Z"" (2 spaces indent)
+                  if line.lstrip().startswith('"version":'):
+                      lines[i] = f'  "version": "{version}"\n'
+                      updated = True
+                      break
+
+              if not updated:
+                  raise ValueError(
+                      "Could not find version field in .codex-plugin/plugin.json")
+
+              with open(manifest_path, 'w') as f:
+                  f.writelines(lines)
+
+              return manifest_path
+
           try:
               version = os.environ['VERSION']
 
               # SKILL.md frontmatter is the single version source.
               skill_path = update_skill_version(version)
               print(f"✅ Synced {skill_path} metadata.version to {version}")
+
+              manifest_path = update_codex_manifest(version)
+              if manifest_path:
+                  print(f"✅ Synced {manifest_path} version to {version}")
+              else:
+                  print("ℹ️  No .codex-plugin/plugin.json; skipped")
 
           except Exception as e:
               print(f"❌ ERROR: Failed to sync versions: {e}")
@@ -106,6 +145,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add version.json skills/terraform-skill/SKILL.md
+          [ -f .codex-plugin/plugin.json ] && git add .codex-plugin/plugin.json || true
           git commit --amend --no-edit
           git push --force-with-lease
 

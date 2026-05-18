@@ -5,11 +5,13 @@ on:
     paths:
       - 'skills/**'
       - '.claude-plugin/**'
+      - '.codex-plugin/**'
   push:
     branches: [master, main]
     paths:
       - 'skills/**'
       - '.claude-plugin/**'
+      - '.codex-plugin/**'
   workflow_dispatch:
 
 jobs:
@@ -87,6 +89,36 @@ jobs:
               sys.exit(1)
 
           print(f"✅ Frontmatter valid ({desc_len} chars)")
+          EOF
+
+      - name: Check Codex Manifest Version Sync
+        run: |
+          python3 << 'EOF'
+          import json
+          import os
+          import sys
+          import yaml
+
+          manifest_path = '.codex-plugin/plugin.json'
+          if not os.path.exists(manifest_path):
+              print("ℹ️  No .codex-plugin/plugin.json; skipping sync check")
+              sys.exit(0)
+
+          with open('skills/terraform-skill/SKILL.md') as f:
+              fm = yaml.safe_load(f.read().split('---', 2)[1])
+          skill_version = (fm.get('metadata') or {}).get('version')
+
+          with open(manifest_path) as f:
+              manifest_version = json.load(f).get('version')
+
+          if skill_version != manifest_version:
+              print(
+                  f"❌ ERROR: version mismatch - SKILL.md metadata.version="
+                  f"{skill_version!r} vs {manifest_path}={manifest_version!r}. "
+                  f"CI owns these; do not hand-edit (see CLAUDE.md).")
+              sys.exit(1)
+
+          print(f"✅ Codex manifest version in sync ({manifest_version})")
           EOF
 
       - name: Check File Size
