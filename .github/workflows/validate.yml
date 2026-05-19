@@ -6,6 +6,8 @@ on:
       - 'skills/**'
       - '.claude-plugin/**'
       - '.codex-plugin/**'
+      - 'POWER.md'
+      - 'mcp.json'
       - '.github/workflows/**'
       - '.github/release/**'
   push:
@@ -14,6 +16,8 @@ on:
       - 'skills/**'
       - '.claude-plugin/**'
       - '.codex-plugin/**'
+      - 'POWER.md'
+      - 'mcp.json'
       - '.github/workflows/**'
       - '.github/release/**'
   workflow_dispatch:
@@ -138,6 +142,49 @@ jobs:
               sys.exit(1)
 
           print(f"✅ Codex manifest version in sync ({manifest_version})")
+          EOF
+
+      - name: Check POWER.md (Kiro) Sync
+        run: |
+          set -e
+          echo "🔍 Regenerating POWER.md and checking it is committed in sync..."
+          node .github/release/build-power.js --check
+          python3 << 'EOF'
+          import json, re, sys
+          import yaml
+
+          content = open('POWER.md').read()
+          if not content.startswith('---'):
+              print("❌ ERROR: POWER.md has no frontmatter")
+              sys.exit(1)
+          fm = yaml.safe_load(content.split('---', 2)[1])
+
+          required = {'name', 'displayName', 'description', 'keywords',
+                      'author', 'version'}
+          missing = required - set(fm.keys())
+          if missing:
+              print(f"❌ ERROR: POWER.md frontmatter missing {missing}")
+              sys.exit(1)
+          if not isinstance(fm['keywords'], list) or not fm['keywords']:
+              print("❌ ERROR: POWER.md keywords must be a non-empty list")
+              sys.exit(1)
+          if not re.match(r'^\d+\.\d+\.\d+$', str(fm['version'])):
+              print(f"❌ ERROR: POWER.md version not semver: {fm['version']!r}")
+              sys.exit(1)
+
+          mcp = json.load(open('mcp.json'))
+          servers = list((mcp.get('mcpServers') or {}).keys())
+          if not servers:
+              print("❌ ERROR: mcp.json has no mcpServers")
+              sys.exit(1)
+          for s in servers:
+              if s not in content:
+                  print(f"❌ ERROR: mcp.json server {s!r} not referenced "
+                        f"in POWER.md")
+                  sys.exit(1)
+
+          print(f"✅ POWER.md in sync (v{fm['version']}, "
+                f"{len(fm['keywords'])} keywords, MCP: {', '.join(servers)})")
           EOF
 
       - name: Check File Size

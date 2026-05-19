@@ -157,6 +157,26 @@ Update with `cd ~/.antigravity/skills/terraform-skill && git pull`.
 </details>
 
 <details>
+<summary>Kiro</summary>
+
+This repo is also a [Kiro Power](https://kiro.dev/docs/powers/) (root
+`POWER.md` + optional `mcp.json`). In Kiro: **Powers panel → "Add power from
+GitHub"**, then paste:
+
+```text
+https://github.com/antonbabenko/terraform-skill
+```
+
+Kiro activates the power on keyword match (e.g. "terraform", "opentofu",
+"state", "modules"). Installing it also registers the optional read-only
+HashiCorp `terraform-mcp-server` (from `mcp.json`) under the Powers section of
+`~/.kiro/settings/mcp.json` — the guidance works without it. `POWER.md` is
+generated from `skills/terraform-skill/SKILL.md`; the skill content is shared,
+not duplicated.
+
+</details>
+
+<details>
 <summary>Manual (symlink local clone)</summary>
 
 ```bash

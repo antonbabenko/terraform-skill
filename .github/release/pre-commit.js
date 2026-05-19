@@ -22,9 +22,11 @@
 const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
+const { buildPower } = require('./build-power')
 
 const SKILL_REL = 'skills/terraform-skill/SKILL.md'
 const MANIFEST_REL = '.codex-plugin/plugin.json'
+const POWER_REL = 'POWER.md'
 const SENTINEL_REL = 'version.json'
 
 function repoRoot() {
@@ -86,6 +88,14 @@ function updateCodexManifest(root, version) {
   return MANIFEST_REL
 }
 
+// Regenerate the Kiro POWER.md from the (already version-synced) SKILL.md so
+// the release commit and tag carry an in-sync tree, same as the codex
+// manifest. Must run AFTER updateSkillVersion + updateCodexManifest.
+function updatePowerFile(root) {
+  fs.writeFileSync(path.join(root, POWER_REL), buildPower(root))
+  return POWER_REL
+}
+
 async function preCommit(props) {
   const version = props && props.version
   if (!version || typeof version !== 'string') {
@@ -105,9 +115,12 @@ async function preCommit(props) {
       console.log(`pre-commit: ${MANIFEST_REL} absent; skipped`)
     }
 
+    const power = updatePowerFile(root)
+    console.log(`pre-commit: regenerated ${power} -> ${version}`)
+
     // The action stages only version-file + changelog. Stage ours so
     // they are in the release commit and the tag.
-    const toStage = [skill]
+    const toStage = [skill, power]
     if (manifest) toStage.push(manifest)
     execSync(`git add ${toStage.join(' ')}`, { cwd: root, stdio: 'inherit' })
   } catch (err) {

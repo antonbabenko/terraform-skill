@@ -10,13 +10,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A **Claude Code skill** - executable documentation that Claude loads to provide Terraform/OpenTofu expertise. It encodes terraform-best-practices.com patterns into Claude's context as version-controlled AI instructions.
 
+It also ships as a **Kiro Power**: the repo-root `POWER.md` (+ optional
+`mcp.json`) is generated from `SKILL.md`, so the skill content is shared, not
+forked.
+
 ## Repository Structure
 
 ```
 terraform-skill/
 ├── skills/
 │   └── terraform-skill/             # Skill autodiscovered by Claude Code plugin system
-│       ├── SKILL.md                 # Core skill file (~305 lines)
+│       ├── SKILL.md                 # Core skill file (~305 lines) — single source of truth
 │       └── references/              # Reference files loaded on demand
 │           ├── ci-cd-workflows.md
 │           ├── code-intelligence-lsp.md
@@ -26,14 +30,27 @@ terraform-skill/
 │           ├── security-compliance.md
 │           ├── state-management.md
 │           └── testing-frameworks.md
+├── POWER.md                         # GENERATED Kiro Power (from SKILL.md) — CI-owned, never hand-edit
+├── mcp.json                         # Optional Kiro MCP (read-only terraform-mcp-server)
 ├── tests/                           # Baseline scenarios and rationalization tracking
 │   ├── baseline-scenarios.md
 │   ├── compliance-verification.md
 │   └── rationalization-table.md
-└── .github/workflows/
-    ├── validate.yml                 # PR validation (frontmatter, size, links, lint)
-    └── automated-release.yml        # Auto-release on master push via conventional commits
+└── .github/
+    ├── release/
+    │   ├── pre-commit.js            # Release version-sync hook (SKILL.md/codex/POWER.md)
+    │   └── build-power.js           # POWER.md generator (`--check` for CI)
+    └── workflows/
+        ├── validate.yml             # PR validation (frontmatter, POWER.md sync, size, links, lint)
+        └── automated-release.yml    # Auto-release on master push via conventional commits
 ```
+
+`POWER.md` and `.codex-plugin/plugin.json` are **generated, CI-owned
+artifacts** synced from `SKILL.md` by `.github/release/build-power.js` and the
+release `pre-commit.js` hook. Never hand-edit them — `validate.yml` runs
+`build-power.js --check` and fails the PR if `POWER.md` drifts. Edit
+`SKILL.md`/`references/` and regenerate with
+`node .github/release/build-power.js`.
 
 ## Development Workflow
 
@@ -90,6 +107,8 @@ The release workflow automatically:
 - Syncs `skills/terraform-skill/SKILL.md` YAML frontmatter
   `metadata.version` (the single version source; the canonical version is the
   git tag managed by the release pipeline)
+- Syncs `.codex-plugin/plugin.json` and regenerates `POWER.md` from
+  `SKILL.md`, staging both into the release commit + tag
 
 **Never manually edit version numbers** - the CI handles this.
 
