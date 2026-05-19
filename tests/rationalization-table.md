@@ -55,21 +55,19 @@ This document has two parts:
 | 13 | Cross-region/account child missing `configuration_aliases` | §13 Missing `configuration_aliases` | `references/module-patterns.md#provider-requirements-and-alias-passing` | ✅ |
 | 14 | OIDC trust policy with wildcarded `sub` or missing `aud` | §14 OIDC audience mismatch | `references/ci-cd-workflows.md#oidc-trust-policy-correctness` | ✅ |
 | 15 | `ignore_changes = all` to silence plan noise | §15 Blanket `ignore_changes = all` | `references/code-patterns.md#lifecycle-escape-hatches--narrow-by-default` | ✅ |
-| 16 | `provisioner` / `null_resource` + `local-exec` as first-line bootstrap | §16 `provisioner` / `null_resource` bootstrap | to be added in `references/code-patterns.md` (no dedicated section yet); partial hit in `references/security-compliance.md` LLM checklist | ❌ |
+| 16 | `provisioner` / `null_resource` + `local-exec` as first-line bootstrap | §16 `provisioner` / `null_resource` bootstrap | `references/code-patterns.md#provisioners-as-last-resort` | ✅ |
 | 17 | Semantic navigation skipped; value-symbol rename done as blind text replace; unsupported terraform-ls op claimed | §17 Code Navigation and Safe Rename | `SKILL.md` Code Intelligence + `references/code-intelligence-lsp.md#terraform-ls-capability-matrix` | ✅ |
 
 ### Coverage Summary
 
 - **Total surfaces tracked:** 17
-- **Covered (`✅`):** 16
+- **Covered (`✅`):** 17
 - **Partial (`◐`):** 0
-- **Open gaps (`❌`):** 1 (row 16 - provisioners)
+- **Open gaps (`❌`):** 0
 
 ### Priority Gaps (❌ rows)
 
-These are the surfaces with no dedicated guard today and should be addressed in the next PR:
-
-1. **Row 16 — Provisioners as last resort.** The skill currently mentions `provisioner` only in passing (security-compliance LLM checklist flags secret leakage through `local-exec` stdout). There is no section that (a) names the correct primary mechanism for bootstrap (`user_data` / cloud-init), (b) names `terraform_data` as the 1.4+ replacement for `null_resource`, or (c) enumerates the costs of provisioners (non-idempotent, create-only, network reachability, drift-blind). Add a "Provisioners as last resort" section to `references/code-patterns.md` and cross-link from the SKILL.md workflow section.
+None — all surfaces covered as of this PR.
 
 ---
 
@@ -465,5 +463,5 @@ Agents are creative. New rationalizations surface over time. Add them to the cov
 
 - **Surfaces tracked:** 17
 - **Scenarios exercising each:** 17 (one-to-one in `baseline-scenarios.md`)
-- **Covered:** 16
-- **Open:** 1 (provisioners - row 16)
+- **Covered:** 17
+- **Open:** 0

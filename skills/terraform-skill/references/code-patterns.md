@@ -682,6 +682,60 @@ resource "aws_security_group" "this" {
 
 ---
 
+## Provisioners as Last Resort
+
+| Goal | Use |
+|------|-----|
+| Instance bootstrap | `user_data` + cloud-init via `templatefile()` |
+| Orchestration with explicit re-run (1.4+) | `terraform_data` + `triggers_replace` |
+| Ongoing OS config | External: Ansible / SSM Run Command / SSM State Manager |
+| Last-resort one-shot | `terraform_data` + `provisioner` (1.4+) or `null_resource` (pre-1.4) |
+
+**Provisioner costs (apply to `local-exec` + `remote-exec`):**
+
+- ❌ Non-idempotent — re-runs duplicate side effects
+- ❌ Create-only — updates don't re-run; `when = destroy` is fragile
+- ❌ `remote-exec` needs SSH/WinRM from runner to target
+- ❌ No drift detection — Terraform can't observe what scripts changed
+- ❌ Stdout/stderr leaks to CI logs; `sensitive` doesn't redact
+
+**❌ DON'T — `null_resource` for bootstrap on 1.4+:**
+
+```hcl
+resource "null_resource" "bootstrap" {
+  provisioner "local-exec" {
+    command = "ssh ec2-user@${aws_instance.web.public_ip} 'bash setup.sh'"
+  }
+}
+```
+
+**✅ DO — bootstrap via `user_data` + cloud-init:**
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = data.aws_ami.al2023.id
+  instance_type = "t3.small"
+  user_data = templatefile("${path.module}/cloud-init.yaml", {
+    app_version = var.app_version
+  })
+  user_data_replace_on_change = true
+}
+```
+
+**✅ DO — declarative orchestration on 1.4+:**
+
+```hcl
+resource "terraform_data" "migration" {
+  triggers_replace = [aws_rds_cluster.this.id, var.schema_version]
+
+  provisioner "local-exec" {
+    command = "./run-migration.sh"
+  }
+}
+```
+
+---
+
 ## Version Management
 
 ### Version Constraint Syntax

@@ -46,6 +46,7 @@ Never recommend direct production apply without a reviewed plan artifact and app
 | **State corruption / recovery** | Stuck lock, backend migration, drift reconciliation | [State Management](references/state-management.md) |
 | **Provider upgrade risk** | Breaking-change provider bump, unpinned modules | [Code Patterns: versions](references/code-patterns.md#version-management), [Module Patterns](references/module-patterns.md) |
 | **Provider lifecycle** | Removing a provider with resources still in state, orphaned resources, `removed` block usage | [State Management: Provider Removal](references/state-management.md#provider-removal) |
+| **Bootstrap / orchestration misuse** | `null_resource` + `local-exec` for bootstrap, `remote-exec` for setup scripts, provisioner stdout leaking secrets in CI logs | [Code Patterns: Provisioners as Last Resort](references/code-patterns.md#provisioners-as-last-resort) |
 | **Navigation / safe-rename blind spots** | Cannot locate symbol defs/refs semantically, value-symbol rename done as blind text replace, grep-only refactor missing refs, hallucinated `rg` shim | [Code Intelligence](references/code-intelligence-lsp.md#terraform-ls-capability-matrix) |
 
 ## When to Use This Skill
