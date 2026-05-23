@@ -155,17 +155,18 @@ jobs:
         run: |
           echo "🔍 Checking internal links..."
           cd skills/terraform-skill
-          if grep -oP '\[.*?\]\(references/.*?\.md.*?\)' SKILL.md references/*.md 2>/dev/null | \
-             sed 's/.*(//' | sed 's/).*//' | sed 's/#.*//' | \
-             while read -r link; do
-               if [ ! -f "$link" ]; then
-                 echo "❌ ERROR: Broken link: $link"
-                 exit 1
-               fi
-             done
-          then
-            echo "✅ No broken links"
+          broken=0
+          while read -r link; do
+            if [ ! -f "$link" ]; then
+              echo "❌ ERROR: Broken link: $link"
+              broken=1
+            fi
+          done < <(grep -oP '\[.*?\]\(references/.*?\.md.*?\)' SKILL.md references/*.md 2>/dev/null | \
+                   sed 's/.*(//' | sed 's/).*//' | sed 's/#.*//')
+          if [ "$broken" -ne 0 ]; then
+            exit 1
           fi
+          echo "✅ No broken links"
 
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v16
