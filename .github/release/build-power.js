@@ -96,13 +96,17 @@ function buildPower(root) {
     .replace(/^\n+/, '')
     .replace(/\s*$/, '')
 
+  // Quote free-text scalars + every keyword so a future value containing a
+  // YAML-sensitive char (:, #, [, etc.) cannot break frontmatter parsing.
+  // version stays unquoted: a CI-controlled multi-dot semver is always a
+  // YAML string and the validate.yml semver check reads it directly.
   const front = [
     '---',
-    `name: ${meta.name}`,
-    `displayName: ${displayName}`,
+    `name: ${yamlDoubleQuoted(meta.name)}`,
+    `displayName: ${yamlDoubleQuoted(displayName)}`,
     `description: ${yamlDoubleQuoted(meta.description)}`,
-    `keywords: [${keywords.join(', ')}]`,
-    `author: ${meta.author}`,
+    `keywords: [${keywords.map((k) => yamlDoubleQuoted(k)).join(', ')}]`,
+    `author: ${yamlDoubleQuoted(meta.author)}`,
     `version: ${meta.version}`,
     '---',
   ].join('\n')
@@ -124,6 +128,11 @@ function buildPower(root) {
     'Powers section of `~/.kiro/settings/mcp.json` on install. The guidance',
     'above works without it; with it, registry/schema lookups are exact',
     'instead of recalled.',
+    '',
+    'The image uses the floating `latest` tag. Docker caches it on first run',
+    'and does not auto-update; run `docker pull ' +
+      'hashicorp/terraform-mcp-server:latest` to refresh, or pin a specific',
+    'tag in `~/.kiro/settings/mcp.json` if a new release misbehaves.',
   ].join('\n')
 
   return `${front}\n\n${banner}\n\n${rewritten}\n\n${mcpTrailer}\n`

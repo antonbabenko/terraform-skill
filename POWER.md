@@ -1,9 +1,9 @@
 ---
-name: terraform-skill
-displayName: Terraform Skill
+name: "terraform-skill"
+displayName: "Terraform Skill"
 description: "Use when writing, reviewing, or debugging Terraform/OpenTofu modules, tests, CI, scans, or state ops - diagnoses failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards."
-keywords: [ci-cd, iac, infrastructure-as-code, modules, opentofu, security-scanning, state-management, terraform, testing]
-author: Anton Babenko
+keywords: ["ci-cd", "iac", "infrastructure-as-code", "modules", "opentofu", "security-scanning", "state-management", "terraform", "testing"]
+author: "Anton Babenko"
 version: 1.14.0
 ---
 
@@ -310,3 +310,7 @@ provider/module documentation lookups. Kiro registers it under the
 Powers section of `~/.kiro/settings/mcp.json` on install. The guidance
 above works without it; with it, registry/schema lookups are exact
 instead of recalled.
+
+The image uses the floating `latest` tag. Docker caches it on first run
+and does not auto-update; run `docker pull hashicorp/terraform-mcp-server:latest` to refresh, or pin a specific
+tag in `~/.kiro/settings/mcp.json` if a new release misbehaves.
