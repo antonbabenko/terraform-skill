@@ -106,6 +106,8 @@ run "verify_encryption" {
 }
 ```
 
+> Pattern applies identically on Azure/GCP; only provider/resource names change. See [Module Patterns: Cross-cloud resource map](module-patterns.md#cross-cloud-resource-map).
+
 ### Critical: Validate Resource Schemas First
 
 **Always use Terraform MCP to validate resource schemas before writing tests:**

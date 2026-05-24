@@ -68,6 +68,8 @@ resource "aws_nat_gateway" "this" {
 }
 ```
 
+> Pattern applies identically on Azure/GCP; for resource equivalents see [Module Patterns: Cross-cloud resource map](module-patterns.md#cross-cloud-resource-map).
+
 ### Variable Definition Structure
 
 **Variable block ordering:**
