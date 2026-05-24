@@ -44,12 +44,17 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN }}
 
-      # Stay on master (which has upstream tracking) so the action's internal
-      # `git pull --ff-only` works. The changelog action pushes the release
-      # commit to `release/next` via its `git-branch` input. Just clear any
-      # stale release/next first.
-      - name: Delete stale release branch
-        run: git push origin --delete release/next 2>/dev/null || true
+      # The changelog action commits on the CURRENT branch then runs
+      # `git push origin release/next`, so a local `release/next` ref must be
+      # checked out; its internal `git pull --ff-only` also needs an upstream.
+      # Create release/next from master HEAD, publish it, and track it (its own
+      # remote, never master - the action pushes explicitly to release/next).
+      - name: Prepare release branch
+        run: |
+          git push origin --delete release/next 2>/dev/null || true
+          git checkout -B release/next
+          git push origin release/next
+          git branch --set-upstream-to=origin/release/next release/next
 
       # Version calc + CHANGELOG + version.json + pre-commit sync
       # (SKILL.md frontmatter metadata.version + .codex-plugin/plugin.json),
