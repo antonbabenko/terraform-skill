@@ -1,0 +1,93 @@
+name: Tag and Publish Release
+
+# Part B of the PR-based release flow (see automated-release.yml).
+# Runs after the `chore(release): vX.Y.Z` PR squash-merges to master. It tags
+# the merged master commit and publishes the GitHub Release. It never commits,
+# so it cannot start a release loop.
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+jobs:
+  tag-release:
+    name: Tag and publish
+    runs-on: ubuntu-latest
+    # Only act on the merged release commit.
+    if: ${{ startsWith(github.event.head_commit.message, 'chore(release):') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Resolve version and tag
+        id: ver
+        run: |
+          set -euo pipefail
+          VERSION="$(jq -r '.version' version.json)"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error::version.json has no version"; exit 1
+          fi
+          TAG="v${VERSION}"
+          # Guard: commit subject must reference this version (catches a desync
+          # between version.json and the release commit).
+          SUBJECT="$(git log -1 --pretty=%s)"
+          case "$SUBJECT" in
+            *"$TAG"*) : ;;
+            *) echo "::error::release commit subject '$SUBJECT' does not match $TAG"; exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag (idempotent)
+        id: tag
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            EXISTING="$(git rev-list -n1 "${TAG}")"
+            if [ "$EXISTING" != "$GITHUB_SHA" ]; then
+              echo "::error::tag ${TAG} already exists at ${EXISTING}, not ${GITHUB_SHA}"; exit 1
+            fi
+            echo "Tag ${TAG} already at ${GITHUB_SHA}; skipping create."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          else
+            git tag "${TAG}" "${GITHUB_SHA}"
+            git push origin "refs/tags/${TAG}"
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract changelog section
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          # First version block in CHANGELOG.md (angular preset headings start
+          # with '#' then a bracketed/plain version). Empty file is fine.
+          awk '
+            /^#+[[:space:]]+\[?[0-9]+\./ { if (seen++) exit }
+            seen { print }
+          ' CHANGELOG.md > /tmp/notes.md || true
+          if [ ! -s /tmp/notes.md ]; then echo "Release ${VERSION}" > /tmp/notes.md; fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.ver.outputs.tag }}
+          body_path: /tmp/notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
