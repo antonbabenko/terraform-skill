@@ -229,9 +229,6 @@ test:
 
     - name: Run Integration Tests
       if: github.ref == 'refs/heads/main'
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
         cd tests
         go test -v -timeout 30m
@@ -301,6 +298,10 @@ on:
     - cron: '0 */2 * * *'  # Every 2 hours
   workflow_dispatch:        # Manual trigger
 
+permissions:
+  id-token: write   # required for OIDC role assumption
+  contents: read
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
@@ -310,8 +311,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_CLEANUP_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Run Cleanup Script
@@ -368,7 +368,7 @@ terraform {
     bucket         = "my-terraform-state"
     key            = "prod/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
+    use_lockfile = true   # 1.10+, native S3 locking (replaces DynamoDB)
     encrypt        = true
   }
 }
@@ -438,6 +438,8 @@ security-scan:
 | GitHub Actions → Azure AD | `api://AzureADTokenExchange` | `repo:<org>/<repo>:environment:<env>` |
 | GitHub Actions → GCP | value passed via `audience` parameter | repo + ref or environment |
 | GitLab CI → AWS | matches `$CI_SERVER_URL` | project path + ref |
+
+Use keyless OIDC for all three clouds (AWS OIDC / Azure federated credentials / GCP Workload Identity Federation). Static keys only if OIDC is unavailable (non-OIDC CI / self-hosted runners) - prefer keyless.
 
 **Rules:**
 - ✅ pin `aud` to the exact value from the table
