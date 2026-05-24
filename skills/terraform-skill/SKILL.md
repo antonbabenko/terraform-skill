@@ -48,6 +48,7 @@ Never recommend direct production apply without a reviewed plan artifact and app
 | **Provider lifecycle** | Removing a provider with resources still in state, orphaned resources, `removed` block usage | [State Management: Provider Removal](references/state-management.md#provider-removal) |
 | **Bootstrap / orchestration misuse** | `null_resource` + `local-exec` for bootstrap, `remote-exec` for setup scripts, provisioner stdout leaking secrets in CI logs | [Code Patterns: Provisioners as Last Resort](references/code-patterns.md#provisioners-as-last-resort) |
 | **Navigation / safe-rename blind spots** | Cannot locate symbol defs/refs semantically, value-symbol rename done as blind text replace, grep-only refactor missing refs, hallucinated `rg` shim | [Code Intelligence](references/code-intelligence-lsp.md#terraform-ls-capability-matrix) |
+| **Cross-cloud / provider mapping** | "What's the Azure/GCP equivalent of X", picking a backend/auth model per cloud | [State Management: Cross-cloud equivalents](references/state-management.md#cross-cloud-equivalents) |
 
 ## When to Use This Skill
 
@@ -182,7 +183,7 @@ checkov -d .
 
 **Don't:** store secrets in variables or `.tfvars`, use default VPC, skip encryption, open security groups to `0.0.0.0/0`, use inline `ingress`/`egress` blocks in `aws_security_group`.
 
-**Do:** source secrets from AWS Secrets Manager / Parameter Store or use `write_only` arguments on 1.11+, create dedicated VPCs, enforce encryption at rest and TLS, least-privilege SGs, use separate `aws_vpc_security_group_{ingress,egress}_rule` resources (AWS provider v5+).
+**Do:** source secrets from a cloud secret manager (AWS Secrets Manager / Azure Key Vault / GCP Secret Manager) or use `write_only` arguments on 1.11+, create dedicated VPCs, enforce encryption at rest and TLS, least-privilege SGs, use separate `aws_vpc_security_group_{ingress,egress}_rule` resources (e.g. AWS provider v5+).
 
 Marking a variable `sensitive = true` masks display only — the value still lives in state. Use `write_only` / `*_wo` on 1.11+, or keep secret material out of Terraform entirely via runtime lookups.
 
@@ -192,7 +193,9 @@ See [Security & Compliance](references/security-compliance.md) for trivy/checkov
 
 **Never use local state in teams or production.** Remote backends provide automatic locking, encryption, versioning, audit logging, and safe collaboration.
 
-### Minimum Viable Backend (AWS S3, 1.10+)
+### Choosing a Remote Backend
+
+AWS example (Azure `azurerm` / GCP `gcs` / TF Cloud syntax: see [State Management: Choosing a Remote Backend](references/state-management.md#choosing-a-remote-backend)):
 
 ```hcl
 terraform {
@@ -206,7 +209,7 @@ terraform {
 }
 ```
 
-On Terraform < 1.10, use `dynamodb_table = "terraform-state-lock"` instead of `use_lockfile`. Azure Storage, GCS, and Terraform Cloud all offer built-in locking — see the State Management reference for syntax.
+On Terraform < 1.10, use `dynamodb_table = "terraform-state-lock"` instead of `use_lockfile`. Azure Storage, GCS, and Terraform Cloud all offer built-in locking - see the State Management reference for syntax. For choosing among backends and their locking models, see [Choosing a Remote Backend](references/state-management.md#choosing-a-remote-backend).
 
 ### State Organization
 
