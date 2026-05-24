@@ -580,6 +580,17 @@ resource "aws_iam_policy" "bad_policy" {
 
 ---
 
+### Cross-cloud security map
+
+| Concern | AWS | Azure | GCP |
+|---------|-----|-------|-----|
+| Secret manager | `aws_secretsmanager_secret` | `azurerm_key_vault_secret` | `google_secret_manager_secret` |
+| Network firewalling | `aws_security_group` + `aws_vpc_security_group_*_rule` | `azurerm_network_security_group` + `azurerm_network_security_rule` | `google_compute_firewall` |
+| Identity | IAM (`aws_iam_role` / `aws_iam_policy`) | RBAC (`azurerm_role_assignment`) | IAM (`google_project_iam_*`) |
+| Encryption at rest | explicit (SSE / KMS) | default-on (optional CMK) | default-on (optional CMEK) |
+
+---
+
 ## Compliance Checklists
 
 ### SOC 2 Compliance
