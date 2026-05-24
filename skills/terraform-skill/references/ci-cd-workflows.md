@@ -365,11 +365,11 @@ apply:
 # backend.tf
 terraform {
   backend "s3" {
-    bucket         = "my-terraform-state"
-    key            = "prod/terraform.tfstate"
-    region         = "us-east-1"
-    use_lockfile = true   # 1.10+, native S3 locking (replaces DynamoDB)
-    encrypt        = true
+    bucket       = "my-terraform-state"
+    key          = "prod/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true # 1.10+, native S3 locking (replaces DynamoDB)
+    encrypt      = true
   }
 }
 ```
