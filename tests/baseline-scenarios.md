@@ -252,7 +252,7 @@ I'm starting a new Terraform project. How should I set up state management?
 - Recommends remote backend with security features:
   - Encryption at rest (S3 bucket encryption)
   - Encryption in transit (HTTPS endpoints)
-  - State locking (DynamoDB for S3, etc.)
+  - State locking (S3 `use_lockfile`; DynamoDB legacy)
   - Access controls (IAM policies)
   - Versioning enabled
 - References Security & Compliance guide
@@ -729,6 +729,6 @@ Format per scenario: terse user prompt, the specific hallucination, expected cor
 - Shell-out to `aws ssm send-command` via `local-exec` instead of declarative alternatives
 - No mention of idempotency or re-run semantics
 
-**Target guard:** to be added in `references/code-patterns.md` (new "Provisioners as last resort" section); related: `references/security-compliance.md` LLM checklist line 548 (secrets via local-exec)
+**Target guard:** `references/code-patterns.md#provisioners-as-last-resort`; related: `references/security-compliance.md` LLM checklist (secrets via local-exec)
 
 ---

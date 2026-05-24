@@ -89,7 +89,7 @@ The description must focus on WHEN to use (triggers, symptoms), not WHAT the ski
 
 ### Token Efficiency
 
-**SKILL.md target:** <300 lines (currently 277).
+**SKILL.md target:** soft target ~300 lines, CI warns only above 500 (currently 305).
 
 **Reference subsection target:** <400 tokens (~1,600 chars). Split or compress anything larger.
 
@@ -119,9 +119,10 @@ Reviewers reject PRs that violate these.
 terraform-skill/
 ├── skills/
 │   └── terraform-skill/            # Autodiscovered by Claude Code plugin system
-│       ├── SKILL.md                # Core skill (<300 lines)
+│       ├── SKILL.md                # Core skill (~305 lines)
 │       └── references/             # Reference files (progressive disclosure)
 │           ├── ci-cd-workflows.md
+│           ├── code-intelligence-lsp.md
 │           ├── code-patterns.md
 │           ├── module-patterns.md
 │           ├── quick-reference.md

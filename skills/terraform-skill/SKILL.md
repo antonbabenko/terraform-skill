@@ -256,7 +256,7 @@ Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature
 
 ## Runtime-Specific Guidance
 
-- **Terraform 1.0-1.5 / OpenTofu 1.0-1.5**: Terratest for integration, static analysis + plan validation only (no native tests).
+- **Terraform 1.0-1.5 (OpenTofu starts at 1.6)**: Terratest for integration, static analysis + plan validation only (no native tests).
 - **1.6+**: native `terraform test` / `tofu test` available — migrate simple unit tests, keep Terratest for complex integration.
 - **1.7+**: mock providers cut test cost — mock for unit tests, real runs for final integration.
 - **1.10+**: S3 native lock-file (`use_lockfile`) is the correct default for new configurations — DynamoDB locking is no longer required.

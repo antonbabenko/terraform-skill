@@ -5,7 +5,7 @@
 [![OpenTofu](https://img.shields.io/badge/OpenTofu-1.6+-FFD814)](https://opentofu.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-A best-practices skill for Terraform and OpenTofu, for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, and more). It helps the agent test code, structure modules, set up CI/CD, and write production infrastructure code.
+A best-practices skill for Terraform and OpenTofu, for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, Kiro, and more). It helps the agent test code, structure modules, set up CI/CD, and write production infrastructure code.
 
 AWS, Azure, and GCP are all first-class. AWS stays the default in examples, but the same backend, auth, security, and resource guidance applies to all three - ask for the Azure or GCP equivalent of any pattern and the skill maps it.
 
@@ -52,7 +52,7 @@ name and will clash.
 
 ### Quick install (any agent)
 
-Works with any [Agent Skills](https://agentskills.io)-compatible tool, via [skills.sh](https://skills.sh/):
+Works with any [Agent Skills](https://agentskills.io)-compatible tool:
 
 ```bash
 npx skills add https://github.com/antonbabenko/terraform-skill
@@ -131,6 +131,17 @@ For a managed Codex plugin install, use the `antonbabenko/agent-plugins`
 marketplace (`codex plugin marketplace add antonbabenko/agent-plugins`, then
 install `terraform-skill`). Do not add `antonbabenko/terraform-skill` as a
 separate marketplace - it clashes by name with `agent-plugins`.
+
+</details>
+
+<details>
+<summary>Kiro</summary>
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill.git ~/.kiro/skills/terraform-skill
+```
+
+Kiro auto-discovers skills from `.kiro/skills/` (workspace) and `~/.kiro/skills/` (global).
 
 </details>
 
@@ -264,6 +275,8 @@ Side-by-side DO vs DON'T examples for variable naming, resource naming, module c
 
 ## Why this skill
 
+This skill started from field-tested Terraform and OpenTofu patterns, then grew through contributions from people who hit missing guidance and added it back.
+
 **Sources:**
 - Patterns from [terraform-best-practices.com](https://www.terraform-best-practices.com/)
 - Approaches used across the [terraform-aws-modules](https://github.com/terraform-aws-modules) collection
@@ -279,7 +292,7 @@ Side-by-side DO vs DON'T examples for variable naming, resource naming, module c
 
 ## Requirements
 
-- An AI agent with skill support: Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, or any [Agent Skills](https://agentskills.io)-compatible host
+- An AI agent with skill support: Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, Kiro, or any [Agent Skills](https://agentskills.io)-compatible host
 - Terraform 1.0+ or OpenTofu 1.6+
 - Optional: [Terraform MCP server](https://github.com/hashicorp/terraform-mcp-server) for registry integration
 

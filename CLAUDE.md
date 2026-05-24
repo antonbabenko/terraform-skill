@@ -16,7 +16,7 @@ A **Claude Code skill** - executable documentation that Claude loads to provide 
 terraform-skill/
 ├── skills/
 │   └── terraform-skill/             # Skill autodiscovered by Claude Code plugin system
-│       ├── SKILL.md                 # Core skill file (~299 lines)
+│       ├── SKILL.md                 # Core skill file (~305 lines)
 │       └── references/              # Reference files loaded on demand
 │           ├── ci-cd-workflows.md
 │           ├── code-intelligence-lsp.md
@@ -44,7 +44,7 @@ terraform-skill/
 CI runs automatically on PRs touching `SKILL.md`, `references/**/*.md`, or `.claude-plugin/**`. To check locally:
 
 ```bash
-# Check SKILL.md line count (target: <300 lines per LLM Consumption Rules)
+# Check SKILL.md line count (soft target ~300 lines; CI warns only above 500)
 wc -l skills/terraform-skill/SKILL.md
 
 # Validate YAML frontmatter (requires pyyaml)
@@ -124,7 +124,7 @@ When adding content, ask: **decision framework or key pattern → SKILL.md; deta
 - **Scannable format:** tables > bullets > prose
 - **✅ DO / ❌ DON'T** side-by-side for non-obvious patterns
 - **Version-specific features** clearly marked (e.g., `Terraform 1.6+`)
-- **Token budget:** SKILL.md target <300 lines (see LLM Consumption Rules); currently ~299
+- **Token budget:** SKILL.md soft target ~300 lines (CI warns only above 500); currently ~305
 
 ### LLM Consumption Rules (enforce in every PR review)
 
@@ -152,7 +152,7 @@ These rules tune content for the **primary reader: an LLM retrieving facts to an
 - [ ] Every code block / table adds a fact not in surrounding prose
 - [ ] Subsection under 400 tokens
 - [ ] Anchors referenced from SKILL.md remain stable
-- [ ] For substantive new sections, consult an external LLM expert (e.g. GPT via `mcp__codex__codex`) for format/compression review before merge
+- [ ] For substantive new sections, get a second-opinion review from an external LLM reviewer for format/compression before merge
 
 ## PR Requirements
 

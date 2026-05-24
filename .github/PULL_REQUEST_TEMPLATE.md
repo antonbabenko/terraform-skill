@@ -63,7 +63,7 @@ Improvements:
 
 ### Frontmatter (if SKILL.md changed)
 
-- [ ] Only `name` and `description` fields present
+- [ ] Required fields present: `name`, `description` (optional: `license`, `metadata`)
 - [ ] Description starts with "Use when..."
 - [ ] Description focuses on triggers/symptoms (not workflow summary)
 - [ ] Description < 1024 characters
@@ -72,8 +72,8 @@ Improvements:
 
 ### Token Efficiency
 
-- [ ] SKILL.md remains <1,500 words (current: ~1,400)
-- [ ] Detailed content moved to skills/*.md reference files where appropriate
+- [ ] SKILL.md stays lean (soft target ~300 lines; CI warns only above 500)
+- [ ] Detailed content moved to skills/terraform-skill/references/*.md where appropriate
 - [ ] Used tables instead of prose
 - [ ] No content duplication
 
@@ -88,7 +88,7 @@ Improvements:
 ### File Organization
 
 - [ ] Core content in SKILL.md
-- [ ] Detailed guides in skills/*.md
+- [ ] Detailed guides in skills/terraform-skill/references/*.md
 - [ ] Testing updates in tests/*.md
 - [ ] No new files outside standard structure
 
@@ -137,11 +137,9 @@ Relates to #
 - [ ] Token efficiency maintained
 - [ ] Quality standards met
 - [ ] No conflicts with existing content
-- [ ] CHANGELOG.md updated (if needed)
+- [ ] CHANGELOG.md and version are CI-managed from conventional commits (do not edit manually)
 
 ### Merge Checklist
 
 - [ ] Squash commits with clear commit message
-- [ ] Update CHANGELOG.md if not done in PR
-- [ ] Consider if version bump needed
-- [ ] Tag if this completes a planned milestone
+- [ ] Release (CHANGELOG, version bump, tag) is automated from conventional commits on master - no manual step
