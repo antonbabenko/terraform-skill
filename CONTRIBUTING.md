@@ -115,7 +115,7 @@ Reviewers reject PRs that violate these.
 
 ### File Organization
 
-```
+```text
 terraform-skill/
 ├── skills/
 │   └── terraform-skill/            # Autodiscovered by Claude Code plugin system
@@ -281,7 +281,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) t
 
 ### Format
 
-```
+```text
 <type>: <description>
 
 [optional body]
@@ -292,7 +292,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) t
 ### Types
 
 | Type | Version Bump | Use For |
-|------|--------------|---------|
+| ---- | ------------ | ------- |
 | `feat!:` or `BREAKING CHANGE:` | Major (1.x.x → 2.0.0) | Breaking changes |
 | `feat:` | Minor (1.2.x → 1.3.0) | New features |
 | `fix:` | Patch (1.2.3 → 1.2.4) | Bug fixes |
