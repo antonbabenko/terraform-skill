@@ -7,6 +7,8 @@
 
 A best-practices skill for Terraform and OpenTofu, for AI coding agents (Claude Code, Cursor, Copilot, Gemini CLI, OpenCode, Codex, and more). It helps the agent test code, structure modules, set up CI/CD, and write production infrastructure code.
 
+AWS, Azure, and GCP are all first-class. AWS stays the default in examples, but the same backend, auth, security, and resource guidance applies to all three - ask for the Azure or GCP equivalent of any pattern and the skill maps it.
+
 ## What this skill provides
 
 **Testing frameworks**
@@ -196,11 +198,17 @@ not unique; if a `code-intelligence` skill is active, check it is the one from
 
 ## Quick start examples
 
-**Create a module with tests:**
-> "Create a Terraform module for AWS VPC with native tests"
+**Create a module with tests (AWS / Azure / GCP):**
+> "Create a Terraform module for an AWS VPC with native tests"
+>
+> "Build an Azure module: VNet, subnets, and a PostgreSQL Flexible Server, with native tests"
+>
+> "Write a GCP module for a VPC network, subnetwork, and Cloud SQL Postgres, with native tests"
 
 **Set up remote state:**
-> "Configure S3 backend with DynamoDB locking for Terraform state"
+> "Configure an S3 backend with native `use_lockfile` locking and encryption for Terraform state"
+>
+> "Choose and configure a remote state backend for AWS, Azure, or GCP (locking, encryption, versioning)"
 
 **Review existing code:**
 > "Review this Terraform configuration following best practices"
@@ -213,6 +221,24 @@ not unique; if a `code-intelligence` skill is active, check it is the one from
 
 **State management:**
 > "How should I organize state files for a multi-team environment?"
+
+## Longer example prompts
+
+These assume a recent Terraform/OpenTofu - `use_lockfile` is 1.10+, `write_only` is 1.11+.
+
+<details>
+<summary>AWS: production service (modules + composition, OIDC, native locking)</summary>
+
+> "I'm building a new production service on AWS. Design reusable Terraform modules plus a prod/staging composition for a VPC with public/private subnets across 3 AZs, an ECS Fargate service behind an ALB, and an RDS Postgres instance. Include native `terraform test` coverage, variables with descriptions/types/validation, S3 remote state with encryption, bucket versioning, and native `use_lockfile` locking (Terraform 1.10+). Keep secret values out of plan/state - use `write_only` / `*_wo` arguments where the provider supports them (Terraform 1.11+) and Secrets Manager/SSM references for runtime secrets. Add a GitHub Actions workflow that runs fmt/validate/tflint/trivy on PRs, produces a reviewed plan artifact, and applies it via AWS OIDC (no static keys). Keep prod/staging state isolated and follow naming conventions."
+
+</details>
+
+<details>
+<summary>GCP: port the AWS pattern (cross-cloud mapping, WIF, gcs backend)</summary>
+
+> "We're standardizing IaC across clouds. Port our AWS module pattern to GCP: reusable modules plus an environment composition for a VPC network, a regional subnetwork, and a Cloud SQL Postgres instance (`google_sql_database_instance`). Use the `gcs` backend (`bucket` + `prefix`) for remote state, and show the state bootstrap bucket separately with object versioning, uniform bucket-level access, public access prevention, and IAM bindings. Use Workload Identity Federation for keyless GitHub Actions auth (no long-lived service-account keys) and native tests. Also show the cross-cloud equivalents (resources + backend) so the team sees the AWS-to-GCP mapping."
+
+</details>
 
 ## What it covers
 
