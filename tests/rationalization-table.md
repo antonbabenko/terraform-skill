@@ -57,11 +57,12 @@ This document has two parts:
 | 15 | `ignore_changes = all` to silence plan noise | §15 Blanket `ignore_changes = all` | `references/code-patterns.md#lifecycle-escape-hatches--narrow-by-default` | ✅ |
 | 16 | `provisioner` / `null_resource` + `local-exec` as first-line bootstrap | §16 `provisioner` / `null_resource` bootstrap | `references/code-patterns.md#provisioners-as-last-resort` | ✅ |
 | 17 | Semantic navigation skipped; value-symbol rename done as blind text replace; unsupported terraform-ls op claimed | §17 Code Navigation and Safe Rename | `SKILL.md` Code Intelligence + `references/code-intelligence-lsp.md#terraform-ls-capability-matrix` | ✅ |
+| 18 | Defaults to AWS S3 backend or `aws_*` resources even when the user specified Azure or GCP | §18 Azure Remote State Defaulting to AWS / §19 GCP Module Defaulting to AWS Resources | `SKILL.md` Diagnose row + `references/state-management.md#cross-cloud-equivalents` + per-reference cross-cloud maps | ✅ |
 
 ### Coverage Summary
 
-- **Total surfaces tracked:** 17
-- **Covered (`✅`):** 17
+- **Total surfaces tracked:** 18
+- **Covered (`✅`):** 18
 - **Partial (`◐`):** 0
 - **Open gaps (`❌`):** 0
 
@@ -461,7 +462,7 @@ Agents are creative. New rationalizations surface over time. Add them to the cov
 
 ### Overall progress
 
-- **Surfaces tracked:** 17
-- **Scenarios exercising each:** 17 (one-to-one in `baseline-scenarios.md`)
-- **Covered:** 17
+- **Surfaces tracked:** 18
+- **Scenarios exercising each:** 11 unique scenarios (row 18 maps scenarios 18 and 19); see `baseline-scenarios.md`
+- **Covered:** 18
 - **Open:** 0

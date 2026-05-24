@@ -451,7 +451,7 @@ Each rationalization gets an explicit counter added to SKILL.md.
 ### Success Metrics
 
 For skill to be considered "passing TDD":
-- [ ] **9/9 scenarios** show clear behavior change WITH skill vs baseline
+- [ ] **11/11 scenarios** show clear behavior change WITH skill vs baseline
 - [ ] Agent uses skill content (decision matrices, patterns, checklists)
 - [ ] Agent doesn't rationalize skipping best practices
 - [ ] Rationalizations documented and countered in skill
@@ -467,10 +467,12 @@ For skill to be considered "passing TDD":
 7. **Minimal module structure** (Scenario 7)
 8. **Bare-bones variables** (Scenario 8)
 9. **Navigation / safe-rename blind spots** (Scenario 17)
+10. **Azure remote state defaulting to S3** (Scenario 18)
+11. **GCP module emitting AWS resources** (Scenario 19)
 
 ### RED Phase Complete When:
 
-- [ ] All 9 scenarios run WITHOUT skill
+- [ ] All 11 scenarios run WITHOUT skill
 - [ ] Results documented in `baseline-results/` directory
 - [ ] Rationalizations captured verbatim
 - [ ] Comparison criteria defined for GREEN phase
@@ -485,6 +487,68 @@ After completing RED phase:
 3. → Iterate: Find new loopholes, plug them, re-test
 
 **Remember:** This is TDD for documentation. Same rigor as code testing.
+
+---
+
+## Scenario 18: Azure Remote State Defaulting to AWS
+
+**Objective:** Verify the skill returns an `azurerm` backend (not S3) for an Azure project.
+
+### Test Prompt
+```
+Set up remote state for our Azure project.
+```
+
+### Expected Baseline Behavior (WITHOUT skill)
+- Defaults to an S3 backend or generic example, ignoring the Azure context.
+- **Rationalization:** "Here is the standard backend configuration" (shows `backend "s3"`)
+
+### Target Behavior (WITH skill)
+- Returns `backend "azurerm"` with resource group / storage account / container / key.
+- Notes that Azure blob-lease locking is automatic (no separate lock table needed).
+
+### Pressure Variations
+- **"Just give me the standard backend."** - must still return `azurerm`, not S3.
+- **"We already use S3 elsewhere."** - must not cross-default the Azure project to S3.
+
+### Forbidden Signals
+- `backend "s3"`, `use_lockfile`, `dynamodb_table` appearing in the Azure answer.
+
+### Success Criteria
+- [ ] Names the `azurerm` backend with correct required arguments (resource_group_name, storage_account_name, container_name, key)
+- [ ] Does not emit any S3 / DynamoDB arguments
+- [ ] Notes that blob-lease locking is built in (no extra resource needed)
+
+---
+
+## Scenario 19: GCP Module Defaulting to AWS Resources
+
+**Objective:** Verify the skill uses `google_*` resources (not `aws_*`) for a GCP module.
+
+### Test Prompt
+```
+Write a module for a network and a compute instance on GCP.
+```
+
+### Expected Baseline Behavior (WITHOUT skill)
+- Emits `aws_vpc` / `aws_instance` or a generic AWS example.
+- **Rationalization:** "Here is a standard network + instance module" (shows AWS resources)
+
+### Target Behavior (WITH skill)
+- Uses `google_compute_network` / `google_compute_subnetwork` / `google_compute_instance`.
+- For state backend, points at the `gcs` backend (not S3).
+
+### Pressure Variations
+- **"Use the usual resources."** - must resolve to GCP-native resources.
+- **"Same as our AWS module."** - must translate to `google_*`, not copy `aws_*`.
+
+### Forbidden Signals
+- `aws_vpc`, `aws_instance`, `aws_subnet` appearing in the GCP answer.
+
+### Success Criteria
+- [ ] All resources use the `google_*` provider namespace
+- [ ] Backend guidance references `gcs`, not `s3`
+- [ ] No `aws_*` resources appear in the output
 
 ---
 

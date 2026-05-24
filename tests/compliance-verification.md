@@ -274,9 +274,9 @@ Look for agent:
 Skill is considered "passing GREEN phase" when:
 
 **Quantitative:**
-- [ ] 8/8 scenarios show measurable behavior improvement
+- [ ] All baseline-scenarios.md scenarios show measurable behavior improvement
 - [ ] 80%+ of success criteria met across all scenarios
-- [ ] Agent references skill content in 7/8+ scenarios
+- [ ] Agent references skill content in nearly all scenarios
 
 **Qualitative:**
 - [ ] Agent proactively applies patterns (not reactive)
@@ -321,7 +321,7 @@ Create file: `compliance-results/scenario-N-[name].md`
 Create file: `compliance-results/SUMMARY.md`
 
 **Include:**
-- Overview: N/8 scenarios passed
+- Overview: N of all baseline scenarios passed
 - Success criteria: N% met overall
 - Key improvements observed
 - Remaining gaps
@@ -331,7 +331,7 @@ Create file: `compliance-results/SUMMARY.md`
 
 ## GREEN Phase Complete When:
 
-- [ ] All 8 scenarios run WITH skill loaded
+- [ ] All baseline-scenarios.md scenarios run WITH skill loaded
 - [ ] Results documented in `compliance-results/` directory
 - [ ] Comparison to baseline complete for all scenarios
 - [ ] Success criteria evaluated
@@ -346,6 +346,6 @@ After GREEN phase:
 1. → `rationalization-table.md` - Update with findings
 2. → REFACTOR phase - Add counters to SKILL.md for new rationalizations
 3. → Re-test scenarios that failed or partially passed
-4. → Iterate until 8/8 scenarios pass
+4. → Iterate until all scenarios pass
 
-**This is iterative:** First pass may only get 5/8 scenarios passing. That's expected. The goal is continuous improvement through the RED-GREEN-REFACTOR cycle.
+**This is iterative:** First pass may only get a subset of scenarios passing. That's expected. The goal is continuous improvement through the RED-GREEN-REFACTOR cycle.
