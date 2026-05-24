@@ -300,6 +300,16 @@ resource "aws_instance" "web" {
 }
 ```
 
+### Cross-cloud resource map
+
+| Resource | AWS | Azure | GCP |
+|----------|-----|-------|-----|
+| Network | `aws_vpc` | `azurerm_virtual_network` | `google_compute_network` |
+| Subnet | `aws_subnet` | `azurerm_subnet` | `google_compute_subnetwork` |
+| Compute instance | `aws_instance` | `azurerm_linux_virtual_machine` | `google_compute_instance` |
+| Managed relational DB | `aws_db_instance` / `aws_rds_cluster` | `azurerm_*_flexible_server` | `google_sql_database_instance` |
+| Object storage | `aws_s3_bucket` | `azurerm_storage_account` + `azurerm_storage_container` | `google_storage_bucket` |
+
 ### 5. Composition Layer: Environment-Specific Values Only
 
 **Pattern:** Compositions provide concrete values, modules provide abstractions
