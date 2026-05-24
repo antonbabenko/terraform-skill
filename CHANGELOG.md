@@ -1,3 +1,12 @@
+# [1.16.0](https://github.com/antonbabenko/terraform-skill/compare/v1.15.0...v1.16.0) (2026-05-24)
+
+
+### Features
+
+* treat AWS/Azure/GCP equally with cross-cloud equivalence map and progressive cloud routing ([#33](https://github.com/antonbabenko/terraform-skill/issues/33)) ([75619bc](https://github.com/antonbabenko/terraform-skill/commit/75619bccc1f9876a4032115c8c7672370431fb7b))
+
+
+
 # [1.15.0](https://github.com/antonbabenko/terraform-skill/compare/v1.14.0...v1.15.0) (2026-05-23)
 
 
