@@ -91,3 +91,17 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+      # On a real release, nudge the agent-plugins marketplace to re-pin this
+      # plugin now instead of waiting for its daily cron. Needs a PAT with
+      # Actions: read+write on agent-plugins (the per-repo GITHUB_TOKEN cannot
+      # trigger another repo's workflow). No-ops if the secret is absent.
+      - name: Trigger agent-plugins external-plugin update
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PLUGINS_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "AGENT_PLUGINS_DISPATCH_TOKEN not set; skipping cross-repo trigger."
+            exit 0
+          fi
+          gh workflow run update-external-plugins.yml -R antonbabenko/agent-plugins
