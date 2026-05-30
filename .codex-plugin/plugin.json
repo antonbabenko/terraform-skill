@@ -33,5 +33,5 @@
   "name": "terraform-skill",
   "repository": "https://github.com/antonbabenko/terraform-skill",
   "skills": "./skills",
-  "version": "1.16.0"
+  "version": "1.17.0"
 }

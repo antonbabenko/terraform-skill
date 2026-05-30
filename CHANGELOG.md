@@ -1,3 +1,12 @@
+# [1.17.0](https://github.com/antonbabenko/terraform-skill/compare/v1.16.0...v1.17.0) (2026-05-30)
+
+
+### Features
+
+* ship terraform-skill as a Kiro Power ([349024d](https://github.com/antonbabenko/terraform-skill/commit/349024da7d1b283b2b12b2a10cba13c98ace0299))
+
+
+
 # [1.16.0](https://github.com/antonbabenko/terraform-skill/compare/v1.15.0...v1.16.0) (2026-05-24)
 
 
