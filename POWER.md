@@ -4,7 +4,7 @@ displayName: "Terraform Skill"
 description: "Use when writing, reviewing, or debugging Terraform/OpenTofu modules, tests, CI, scans, or state ops - diagnoses failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards."
 keywords: ["ci-cd", "iac", "infrastructure-as-code", "modules", "opentofu", "security-scanning", "state-management", "terraform", "testing"]
 author: "Anton Babenko"
-version: 1.14.0
+version: 1.16.0
 ---
 
 <!-- GENERATED FILE - DO NOT EDIT. Source: skills/terraform-skill/SKILL.md. Regenerate: node .github/release/build-power.js. CI-owned (version sync), like .codex-plugin/plugin.json. -->
@@ -48,7 +48,9 @@ Never recommend direct production apply without a reviewed plan artifact and app
 | **State corruption / recovery** | Stuck lock, backend migration, drift reconciliation | [State Management](skills/terraform-skill/references/state-management.md) |
 | **Provider upgrade risk** | Breaking-change provider bump, unpinned modules | [Code Patterns: versions](skills/terraform-skill/references/code-patterns.md#version-management), [Module Patterns](skills/terraform-skill/references/module-patterns.md) |
 | **Provider lifecycle** | Removing a provider with resources still in state, orphaned resources, `removed` block usage | [State Management: Provider Removal](skills/terraform-skill/references/state-management.md#provider-removal) |
+| **Bootstrap / orchestration misuse** | `null_resource` + `local-exec` for bootstrap, `remote-exec` for setup scripts, provisioner stdout leaking secrets in CI logs | [Code Patterns: Provisioners as Last Resort](skills/terraform-skill/references/code-patterns.md#provisioners-as-last-resort) |
 | **Navigation / safe-rename blind spots** | Cannot locate symbol defs/refs semantically, value-symbol rename done as blind text replace, grep-only refactor missing refs, hallucinated `rg` shim | [Code Intelligence](skills/terraform-skill/references/code-intelligence-lsp.md#terraform-ls-capability-matrix) |
+| **Cross-cloud / provider mapping** | "What's the Azure/GCP equivalent of X", picking a backend/auth model per cloud | [State Management: Cross-cloud equivalents](skills/terraform-skill/references/state-management.md#cross-cloud-equivalents) |
 
 ## When to Use This Skill
 
@@ -183,7 +185,7 @@ checkov -d .
 
 **Don't:** store secrets in variables or `.tfvars`, use default VPC, skip encryption, open security groups to `0.0.0.0/0`, use inline `ingress`/`egress` blocks in `aws_security_group`.
 
-**Do:** source secrets from AWS Secrets Manager / Parameter Store or use `write_only` arguments on 1.11+, create dedicated VPCs, enforce encryption at rest and TLS, least-privilege SGs, use separate `aws_vpc_security_group_{ingress,egress}_rule` resources (AWS provider v5+).
+**Do:** source secrets from a cloud secret manager (AWS Secrets Manager / Azure Key Vault / GCP Secret Manager) or use `write_only` arguments on 1.11+, create dedicated VPCs, enforce encryption at rest and TLS, least-privilege SGs, use separate `aws_vpc_security_group_{ingress,egress}_rule` resources (e.g. AWS provider v5+).
 
 Marking a variable `sensitive = true` masks display only — the value still lives in state. Use `write_only` / `*_wo` on 1.11+, or keep secret material out of Terraform entirely via runtime lookups.
 
@@ -193,7 +195,9 @@ See [Security & Compliance](skills/terraform-skill/references/security-complianc
 
 **Never use local state in teams or production.** Remote backends provide automatic locking, encryption, versioning, audit logging, and safe collaboration.
 
-### Minimum Viable Backend (AWS S3, 1.10+)
+### Choosing a Remote Backend
+
+AWS example (Azure `azurerm` / GCP `gcs` / TF Cloud syntax: see [State Management: Choosing a Remote Backend](skills/terraform-skill/references/state-management.md#choosing-a-remote-backend)):
 
 ```hcl
 terraform {
@@ -207,7 +211,7 @@ terraform {
 }
 ```
 
-On Terraform < 1.10, use `dynamodb_table = "terraform-state-lock"` instead of `use_lockfile`. Azure Storage, GCS, and Terraform Cloud all offer built-in locking — see the State Management reference for syntax.
+On Terraform < 1.10, use `dynamodb_table = "terraform-state-lock"` instead of `use_lockfile`. Azure Storage, GCS, and Terraform Cloud all offer built-in locking - see the State Management reference for syntax. For choosing among backends and their locking models, see [Choosing a Remote Backend](skills/terraform-skill/references/state-management.md#choosing-a-remote-backend).
 
 ### State Organization
 
@@ -254,7 +258,7 @@ Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature
 
 ## Runtime-Specific Guidance
 
-- **Terraform 1.0-1.5 / OpenTofu 1.0-1.5**: Terratest for integration, static analysis + plan validation only (no native tests).
+- **Terraform 1.0-1.5 (OpenTofu starts at 1.6)**: Terratest for integration, static analysis + plan validation only (no native tests).
 - **1.6+**: native `terraform test` / `tofu test` available — migrate simple unit tests, keep Terratest for complex integration.
 - **1.7+**: mock providers cut test cost — mock for unit tests, real runs for final integration.
 - **1.10+**: S3 native lock-file (`use_lockfile`) is the correct default for new configurations — DynamoDB locking is no longer required.
