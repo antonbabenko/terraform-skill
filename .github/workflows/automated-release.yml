@@ -88,17 +88,26 @@ jobs:
           TAG: ${{ steps.changelog.outputs.tag }}
         run: |
           set -euo pipefail
-          # Branch was reset+pushed by the changelog action. Open a PR if none
-          # is open for release/next; otherwise reuse it. Title drives the
-          # squash-merge commit subject so the loop guard (Workflow A) skips it
-          # and Workflow B's trigger matches it.
-          if gh pr view release/next --json number >/dev/null 2>&1; then
-            gh pr edit release/next --title "chore(release): ${TAG}"
-          else
-            gh pr create \
+          # Branch was reset+pushed by the changelog action. Reuse an OPEN PR
+          # for release/next if one exists, else open a new one. Title drives
+          # the squash-merge commit subject so the loop guard (Workflow A)
+          # skips it and Workflow B's trigger matches it.
+          #
+          # Resolve by `gh pr list --state open`, NOT `gh pr view release/next`:
+          # view/merge by branch name can resolve to a STALE MERGED PR (a prior
+          # release reused the release/next head), so the script silently took
+          # the edit-merged-PR path and never created a new PR while still
+          # exiting 0. Scope to state=open and act on the explicit number.
+          pr=$(gh pr list --head release/next --base master --state open \
+                 --json number --jq '.[0].number // empty')
+          if [ -z "$pr" ]; then
+            url=$(gh pr create \
               --base master \
               --head release/next \
               --title "chore(release): ${TAG}" \
-              --body "Automated release ${TAG}. Squash-merging publishes the tag and GitHub Release (tag-release.yml)."
+              --body "Automated release ${TAG}. Squash-merging publishes the tag and GitHub Release (tag-release.yml).")
+            pr=$(printf '%s\n' "$url" | grep -oE '[0-9]+$')
+          else
+            gh pr edit "$pr" --title "chore(release): ${TAG}"
           fi
-          gh pr merge release/next --auto --squash --delete-branch --subject "chore(release): ${TAG}"
+          gh pr merge "$pr" --auto --squash --delete-branch --subject "chore(release): ${TAG}"
