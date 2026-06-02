@@ -25,6 +25,8 @@ Every Terraform/OpenTofu response must include:
 
 Never recommend direct production apply without a reviewed plan artifact and approval.
 
+Never run `terraform destroy` (targeted or full) without first running `terraform plan -destroy` and showing the user every resource that will be deleted — including implicit dependents pulled in via locals or `for_each`. Get explicit confirmation before proceeding. Never use `-auto-approve` on destroy.
+
 ## Workflow
 
 1. **Capture execution context** — runtime+version, provider(s), backend, execution path, environment criticality.
@@ -42,6 +44,7 @@ Never recommend direct production apply without a reviewed plan artifact and app
 | **Identity churn** | Resource addresses shift after refactor, `count` index churn, missing `moved` blocks | [Code Patterns: count vs for_each](skills/terraform-skill/references/code-patterns.md#count-vs-for_each-deep-dive), [Code Patterns: moved blocks](skills/terraform-skill/references/code-patterns.md#moved-blocks-terraform-11), [Code Patterns: LLM mistakes](skills/terraform-skill/references/code-patterns.md#llm-mistake-checklist--code-patterns) |
 | **Secret exposure** | Secrets in defaults, state, logs, CI artifacts | [Security & Compliance](skills/terraform-skill/references/security-compliance.md), [Code Patterns: write-only](skills/terraform-skill/references/code-patterns.md#write-only-arguments-terraform-111), [State Management](skills/terraform-skill/references/state-management.md) |
 | **Blast radius** | Oversized stacks, shared prod/non-prod state, unsafe applies | [State Management](skills/terraform-skill/references/state-management.md), [Module Patterns](skills/terraform-skill/references/module-patterns.md) |
+| **Destroy cascade** | Targeted destroy deletes more than expected; locals referencing a targeted resource make all `for_each` consumers implicit dependents | Response Contract: plan-destroy first; [State Management: Safe Destroy](skills/terraform-skill/references/state-management.md#safe-destroy-protocol) |
 | **CI drift** | Local plan ≠ CI plan, apply without reviewed artifact, unpinned versions | [CI/CD Workflows](skills/terraform-skill/references/ci-cd-workflows.md), [Code Patterns: versions](skills/terraform-skill/references/code-patterns.md#version-management) |
 | **Compliance gaps** | Missing policy stage, no approval model, no evidence retention | [Security & Compliance](skills/terraform-skill/references/security-compliance.md), [CI/CD Workflows](skills/terraform-skill/references/ci-cd-workflows.md) |
 | **Testing blind spots** | Plan-only validation of computed values, set-type indexing, mock/real confusion | [Testing Frameworks](skills/terraform-skill/references/testing-frameworks.md) |

@@ -16,6 +16,7 @@ This document provides detailed guidance on state management, from remote backen
 5. [Multi-Team State Isolation](#multi-team-state-isolation)
 6. [State Recovery & Troubleshooting](#state-recovery--troubleshooting)
 7. [State Best Practices Summary](#state-best-practices-summary)
+   - [Safe Destroy Protocol](#safe-destroy-protocol)
 
 ---
 
@@ -1792,6 +1793,16 @@ rm .terraform/terraform.tfstate.lock.info  # ❌ Dangerous
 - High blast radius
 ✅ **Instead:** Split by component/team/environment
 
+### Safe Destroy Protocol
+
+A targeted destroy can cascade far beyond its targets via implicit dependencies. Always follow this sequence:
+
+1. Run `terraform plan -destroy [-target=...]` — never skip straight to destroy
+2. Read **every** resource under "will be destroyed", not just the targeted ones
+3. ⚠️ Watch for `for_each` resources fed by a local that references a targeted resource — all instances become implicit dependents (e.g. targeting an `aws_eip` that is referenced in a `locals {}` block used by a `for_each` record resource will destroy **all** those records)
+4. Get explicit user confirmation of the full list before proceeding
+5. ❌ Never use `-auto-approve` on destroy in production
+
 ### LLM Mistake Checklist — State Management
 
 Common model mistakes to correct before returning state-related recommendations:
@@ -1804,6 +1815,7 @@ Common model mistakes to correct before returning state-related recommendations:
 - mixes prod and non-prod in the same backend key
 - recommends workspace-only isolation as a substitute for backend-level IAM separation
 - writes DynamoDB-lock configuration on Terraform 1.10+ instead of using `use_lockfile = true` on the S3 backend
+- runs `terraform destroy -auto-approve` or skips `plan -destroy` before a targeted destroy — missing implicit dependents pulled in via shared locals
 - reads via `terraform_remote_state` within a single team's stack instead of using module outputs (see [module-patterns.md](module-patterns.md#3-use-terraform_remote_state-sparingly--only-at-true-ownership-boundaries))
 - omits the rollback/recovery note for destructive state operations
 
