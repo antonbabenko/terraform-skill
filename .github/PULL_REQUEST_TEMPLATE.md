@@ -141,5 +141,6 @@ Relates to #
 
 ### Merge Checklist
 
-- [ ] Squash commits with clear commit message
+- [ ] PR **title** is a valid Conventional Commits subject (enforced by the "Validate PR Title" check) - it becomes the squash commit subject that drives the release
+- [ ] Squash-merge only (direct pushes to master are blocked; the squash subject = the PR title)
 - [ ] Release (CHANGELOG, version bump, tag) is automated from conventional commits on master - no manual step

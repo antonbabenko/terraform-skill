@@ -329,6 +329,18 @@ git commit -m "chore: update workflow dependencies"
 
 Commit type determines the version bump, the changelog group, and whether a release is cut on merge to master. The release workflow updates the version in SKILL.md frontmatter (the single version source) and tags the release.
 
+### The PR title is what counts
+
+PRs are **squash-merged**, and the squash commit subject is the **PR title**. That title is the subject the release workflow reads on master - so the **PR title must be a valid Conventional Commits subject** (e.g. `feat: add native test mocking guidance`), not just your individual commits.
+
+- ✅ Title the PR with a conventional `type: description` (use `feat!:` or a `BREAKING CHANGE:` footer for breaking changes).
+- A required CI check, **"Validate PR Title"**, lints the title on every PR and blocks merge until it conforms.
+- Your in-progress commit messages are squashed away, so they need not be conventional - only the PR title.
+
+### No direct pushes to master
+
+`master` is protected: **all changes land through a pull request** (direct pushes are rejected). Releases also go through an automated PR - see the Release Process below.
+
 ## Submitting Changes
 
 ### Pull Request Process

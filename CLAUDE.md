@@ -102,6 +102,13 @@ Releases are **fully automated** from conventional commits on `master`:
 | `fix:` | Patch |
 | Other | Patch (default) |
 
+`master` is protected by a ruleset: **no direct pushes** (all changes land via
+PR) and two required checks - `Validate Skill Files` and `Validate PR Title`.
+PRs are **squash-merged**, so the **PR title** becomes the master commit
+subject that drives the bump above; `pr-title-lint.yml` enforces that the title
+is a valid conventional subject. The release flow (`automated-release.yml`)
+opens its own `chore(release): vX.Y.Z` PR and auto-merges it.
+
 The release workflow automatically:
 - Bumps the version in `CHANGELOG.md`
 - Syncs `skills/terraform-skill/SKILL.md` YAML frontmatter
