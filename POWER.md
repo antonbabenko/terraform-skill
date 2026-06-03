@@ -4,7 +4,7 @@ displayName: "Terraform Skill"
 description: "Use when writing, reviewing, or debugging Terraform/OpenTofu modules, tests, CI, scans, or state ops - diagnoses failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards."
 keywords: ["ci-cd", "iac", "infrastructure-as-code", "modules", "opentofu", "security-scanning", "state-management", "terraform", "testing"]
 author: "Anton Babenko"
-version: 1.17.0
+version: 1.17.1
 ---
 
 <!-- GENERATED FILE - DO NOT EDIT. Source: skills/terraform-skill/SKILL.md. Regenerate: node .github/release/build-power.js. CI-owned (version sync), like .codex-plugin/plugin.json. -->
