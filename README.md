@@ -146,13 +146,14 @@ Kiro auto-discovers skills from `.kiro/skills/` (workspace) and `~/.kiro/skills/
 </details>
 
 <details>
-<summary>Antigravity</summary>
+<summary>Antigravity/Antigravity IDE/Antigravity CLI</summary>
 
 ```bash
-git clone https://github.com/antonbabenko/terraform-skill.git ~/.antigravity/skills/terraform-skill
+git clone https://github.com/antonbabenko/terraform-skill.git
+ln -s "$(pwd)/terraform-skill/skills/terraform-skill" ~/.gemini/config/skills/terraform-skill
 ```
 
-Update with `cd ~/.antigravity/skills/terraform-skill && git pull`.
+Update with `git pull`.
 
 </details>
 
