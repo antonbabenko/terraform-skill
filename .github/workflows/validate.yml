@@ -1,15 +1,14 @@
 name: Validate Skill
 
 on:
+  # No `paths:` filter on pull_request: `Validate Skill Files` is a required
+  # status check on master (ruleset), so it MUST run on EVERY PR - otherwise a
+  # PR that touches no filtered path (e.g. README-only) never reports the check
+  # and stays blocked forever. Same rule as pr-title-lint.yml. Validation steps
+  # read files that always exist (SKILL.md, POWER.md, .codex-plugin, mcp.json),
+  # so docs-only PRs pass cleanly. The push trigger keeps its paths filter (see
+  # release-bot interaction) - do not add one back here.
   pull_request:
-    paths:
-      - 'skills/**'
-      - '.claude-plugin/**'
-      - '.codex-plugin/**'
-      - 'POWER.md'
-      - 'mcp.json'
-      - '.github/workflows/**'
-      - '.github/release/**'
   push:
     branches: [master, main]
     paths:
