@@ -1,5 +1,14 @@
 # Terraform & OpenTofu Skill for AI Agents
 
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=terraform-skill">
+    <img src="assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="140" />
+  </a>
+  <br />
+  <sub><strong>Atlas Cloud</strong> Atlas Cloud provides OpenAI-compatible LLM APIs and async image/video generation APIs for infrastructure automation, documentation, and multimodal DevOps workflows.</sub>
+</p>
+
+
 [![Agent Skill](https://img.shields.io/badge/Agent-Skill-5865F2)](https://agentskills.io)
 [![Terraform](https://img.shields.io/badge/Terraform-1.0+-623CE4)](https://www.terraform.io/)
 [![OpenTofu](https://img.shields.io/badge/OpenTofu-1.6+-FFD814)](https://opentofu.org/)
