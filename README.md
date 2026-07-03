@@ -135,6 +135,29 @@ separate marketplace - it clashes by name with `agent-plugins`.
 </details>
 
 <details>
+<summary>Autohand Code</summary>
+
+Install the skill globally:
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill.git
+mkdir -p ~/.autohand/skills
+cp -R terraform-skill/skills/terraform-skill ~/.autohand/skills/
+```
+
+Or install it only for the current project:
+
+```bash
+git clone https://github.com/antonbabenko/terraform-skill.git
+mkdir -p .autohand/skills
+cp -R terraform-skill/skills/terraform-skill .autohand/skills/
+```
+
+Autohand Code discovers skills from `~/.autohand/skills/` and `.autohand/skills/`.
+
+</details>
+
+<details>
 <summary>Kiro</summary>
 
 ```bash
