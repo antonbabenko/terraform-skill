@@ -30,6 +30,7 @@ terraform-skill/
 │           ├── security-compliance.md
 │           ├── state-management.md
 │           └── testing-frameworks.md
+├── .claude-plugin/plugin.json       # Copilot CLI / Claude Code manifest: hand-maintained, no version/$schema/mcpServers (CI-checked)
 ├── POWER.md                         # GENERATED Kiro Power (from SKILL.md) — CI-owned, never hand-edit
 ├── mcp.json                         # Optional Kiro MCP (read-only terraform-mcp-server)
 ├── tests/                           # Baseline scenarios and rationalization tracking

@@ -143,6 +143,40 @@ jobs:
           print(f"✅ Codex manifest version in sync ({manifest_version})")
           EOF
 
+      - name: Check Claude/Copilot Plugin Manifest
+        run: |
+          python3 << 'EOF'
+          import json
+          import os
+          import sys
+          import yaml
+
+          # Read by Copilot CLI (legacy format) and Claude Code. Kept
+          # versionless (no extra CI-synced file), without $schema (that would
+          # switch Copilot to Agent Plugins mode, which loads root mcp.json),
+          # and without mcpServers (the Kiro docker MCP must not auto-install).
+          manifest_path = '.claude-plugin/plugin.json'
+          if not os.path.exists(manifest_path):
+              print(f"ℹ️  No {manifest_path}; skipping")
+              sys.exit(0)
+
+          with open(manifest_path) as f:
+              manifest = json.load(f)
+          with open('skills/terraform-skill/SKILL.md') as f:
+              fm = yaml.safe_load(f.read().split('---', 2)[1])
+
+          if manifest.get('name') != fm['name']:
+              print(f"❌ ERROR: {manifest_path} name={manifest.get('name')!r} "
+                    f"!= SKILL.md name={fm['name']!r}")
+              sys.exit(1)
+          banned = {'version', '$schema', 'mcpServers'} & set(manifest)
+          if banned:
+              print(f"❌ ERROR: {manifest_path} must not set {sorted(banned)}")
+              sys.exit(1)
+
+          print(f"✅ {manifest_path} valid")
+          EOF
+
       - name: Check POWER.md (Kiro) Sync
         run: |
           set -e
