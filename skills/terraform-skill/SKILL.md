@@ -4,7 +4,7 @@ description: Use when writing, reviewing, or debugging Terraform/OpenTofu module
 license: Apache-2.0
 metadata:
   author: Anton Babenko
-  version: 1.17.1
+  version: 1.17.2
 ---
 
 # Terraform Skill for Claude
