@@ -394,6 +394,29 @@ resource "aws_secretsmanager_secret" "app_api_key" {
 # providers that support it) — not via random_password stored in state.
 ```
 
+### Azure Key Vault Write-Only Secret
+
+Requires Terraform 1.11+, azurerm 4.23.0+ (`value_wo`), random 3.7.1+ (ephemeral `random_password`).
+
+```hcl
+ephemeral "random_password" "app" {
+  length = 32
+}
+
+resource "azurerm_key_vault_secret" "app" {
+  name             = "app-password"
+  key_vault_id     = azurerm_key_vault.this.id
+  value_wo         = ephemeral.random_password.app.result
+  value_wo_version = 1 # increment to write a new value
+}
+```
+
+- ❌ `value = ...`: azurerm stores every argument of this resource, including `value`, in state as plaintext
+- ✅ Increment `value_wo_version` to rotate; Terraform keeps no `value_wo` to diff against
+- ✅ Consumers reference the secret without a version (`versionless_id` URI or `resource_versionless_id` ARM ID, whichever the consuming service accepts) so new versions roll out; never pass it through Terraform outputs
+- ❌ Multi-line values: Key Vault strips newlines; wrap with `base64encode()`
+- ✅ Destroy/recreate under the same name hits soft-delete; set `features { key_vault { recover_soft_deleted_secrets = true } }` or purge on destroy
+
 ### Environment Variables
 
 ```bash
@@ -588,6 +611,29 @@ resource "aws_iam_policy" "bad_policy" {
 | Network firewalling | `aws_security_group` + `aws_vpc_security_group_*_rule` | `azurerm_network_security_group` + `azurerm_network_security_rule` | `google_compute_firewall` |
 | Identity | IAM (`aws_iam_role` / `aws_iam_policy`) | RBAC (`azurerm_role_assignment`) | IAM (`google_project_iam_*`) |
 | Encryption at rest | explicit (SSE / KMS) | default-on (optional CMK) | default-on (optional CMEK) |
+
+### Azure Managed Identity Role Assignment
+
+```hcl
+resource "azurerm_user_assigned_identity" "app" {
+  name                = "id-app-prod"
+  resource_group_name = azurerm_resource_group.app.name
+  location            = azurerm_resource_group.app.location
+}
+
+resource "azurerm_role_assignment" "app_kv" {
+  scope                = azurerm_key_vault.this.id # resource scope, not the subscription
+  role_definition_name = "Key Vault Secrets User"  # needs rbac_authorization_enabled = true on the vault
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+  principal_type       = "ServicePrincipal" # new principal: avoids Entra replication-delay failures
+}
+```
+
+- ✅ `principal_id` is the object ID; never pass `client_id`
+- ✅ Grant the Terraform identity `Role Based Access Control Administrator` (or User Access Administrator / Owner) on the scope; `Contributor` cannot create role assignments
+- ✅ Omit `name`: azurerm derives a deterministic UUID from scope, principal and role
+- ❌ `skip_service_principal_aad_check = true` on a user or group principal: the assignment fails; use it only for a newly created service principal
+- ❌ Subscription-scope `Contributor` for a workload identity; assign a data-plane role on the one resource it reads
 
 ---
 

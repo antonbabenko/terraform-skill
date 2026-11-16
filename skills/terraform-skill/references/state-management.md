@@ -276,6 +276,32 @@ resource "azurerm_storage_container" "terraform_state" {
 }
 ```
 
+### Azure Subscriptions as State Boundaries
+
+| Boundary | Use for | Tradeoff |
+|----------|---------|----------|
+| Subscription | environment split (prod / non-prod), RBAC scope | one state per subscription per environment; cross-subscription reads via `terraform_remote_state` |
+| Resource group | one workload or component inside a subscription | inherits role assignments made at subscription scope |
+| State file (`key`) | one root module per component per environment | smallest blast radius; more backends to wire |
+
+```hcl
+provider "azurerm" {
+  features {}
+  subscription_id = var.subscription_id # required on azurerm 4.0+ (or ARM_SUBSCRIPTION_ID)
+}
+
+provider "azurerm" {
+  alias           = "connectivity" # second subscription in the same root
+  features {}
+  subscription_id = var.connectivity_subscription_id
+}
+```
+
+- ✅ Set `subscription_id` explicitly per provider block; azurerm 4.0+ errors without it or `ARM_SUBSCRIPTION_ID`
+- ❌ Relying on the active `az` CLI subscription (read since azurerm 4.60.0) in CI: the login context picks the target
+- ✅ Encode subscription and environment in `key`: `<subscription>/<env>/<component>.tfstate`
+- ✅ Backend `subscription_id` is only needed for access-key lookup or `lookup_blob_endpoint`; with `use_azuread_auth = true` omit it
+
 ### Google Cloud Storage Backend
 
 ```hcl
