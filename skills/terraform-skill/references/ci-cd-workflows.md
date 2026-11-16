@@ -11,9 +11,10 @@ This document provides detailed CI/CD workflow templates and optimization strate
 
 1. [GitHub Actions Workflow](#github-actions-workflow)
 2. [GitLab CI Template](#gitlab-ci-template)
-3. [Cost Optimization](#cost-optimization)
-4. [Automated Cleanup](#automated-cleanup)
-5. [Best Practices](#best-practices)
+3. [Azure DevOps Pipeline](#azure-devops-pipeline)
+4. [Cost Optimization](#cost-optimization)
+5. [Automated Cleanup](#automated-cleanup)
+6. [Best Practices](#best-practices)
 
 ---
 
@@ -208,6 +209,111 @@ apply:
   environment:
     name: production
 ```
+
+---
+
+## Azure DevOps Pipeline
+
+### Azure DevOps Auth Options
+
+Auth: Azure Resource Manager service connection with workload identity federation (WIF), no client secret.
+
+| Goal | Use | Tradeoff |
+|------|-----|----------|
+| Default | App registration WIF connection + azurerm request-token env vars (below) | Federated assertion valid about 1 hour; longer runs fail with `AADSTS700024` |
+| Plan/apply runs over 1 hour | WIF connection backed by a user-assigned managed identity | Managed identity tokens last about 24 hours; identity to manage |
+| Avoid | `addSpnToEnvironment` + `ARM_OIDC_TOKEN=$idToken` | Static token captured once at task start |
+
+### azure-pipelines.yml
+
+```yaml
+# azure-pipelines.yml
+trigger:
+  branches:
+    include: [main]
+
+variables:
+  TF_VERSION: 1.17.2
+  ARM_SUBSCRIPTION_ID: 00000000-0000-0000-0000-000000000000 # non-secret vars reach steps as env vars
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: plan
+    jobs:
+      - job: plan
+        steps:
+          - script: |
+              curl -fsSLo tf.zip "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+              sudo unzip -o tf.zip terraform -d /usr/local/bin
+            displayName: Install Terraform
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: sc-prod-wif # literal name; service connections cannot come from variables
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                # AzureCLI@2 exports AZURESUBSCRIPTION_* for WIF connections
+                export ARM_CLIENT_ID="$AZURESUBSCRIPTION_CLIENT_ID" ARM_TENANT_ID="$AZURESUBSCRIPTION_TENANT_ID"
+                export ARM_ADO_PIPELINE_SERVICE_CONNECTION_ID="$AZURESUBSCRIPTION_SERVICE_CONNECTION_ID"
+                terraform init -input=false
+                terraform plan -input=false -out=tfplan
+            env: # read by the azurerm provider AND the azurerm backend
+              ARM_USE_OIDC: 'true'
+              ARM_USE_AZUREAD: 'true' # backend: Entra ID auth to the blob data plane
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken) # secrets reach env only when mapped
+              SYSTEM_OIDCREQUESTURI: $(System.OidcRequestUri)
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)/tfplan
+              artifact: tfplan
+
+  - stage: apply
+    dependsOn: plan
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: apply
+        environment: prod # approvals and checks are configured on this environment
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self # deployment jobs do not clone the repo
+                - download: current # only this artifact; lands in $(Pipeline.Workspace)/tfplan/
+                  artifact: tfplan
+                - script: |
+                    curl -fsSLo tf.zip "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+                    sudo unzip -o tf.zip terraform -d /usr/local/bin
+                  displayName: Install Terraform
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: sc-prod-wif
+                    workingDirectory: $(Build.SourcesDirectory) # the checked-out root module
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      export ARM_CLIENT_ID="$AZURESUBSCRIPTION_CLIENT_ID" ARM_TENANT_ID="$AZURESUBSCRIPTION_TENANT_ID"
+                      export ARM_ADO_PIPELINE_SERVICE_CONNECTION_ID="$AZURESUBSCRIPTION_SERVICE_CONNECTION_ID"
+                      terraform init -input=false
+                      terraform apply -input=false "$(Pipeline.Workspace)/tfplan/tfplan"
+                  env:
+                    ARM_USE_OIDC: 'true'
+                    ARM_USE_AZUREAD: 'true'
+                    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+                    SYSTEM_OIDCREQUESTURI: $(System.OidcRequestUri)
+```
+
+### Azure DevOps Rules
+
+- ✅ Set `ARM_ADO_PIPELINE_SERVICE_CONNECTION_ID`; without it azurerm falls back to the GitHub OIDC authorizer
+- ✅ Configure approvals on the environment (Pipelines > Environments > Approvals and checks); YAML editors cannot change checks
+- ✅ Authorize each pipeline on the service connection; avoid "Grant access permission to all pipelines"
+- ✅ Treat the `tfplan` artifact as secret: saved plans store sensitive values in cleartext
+- ❌ `terraform plan` in the apply stage; apply the reviewed artifact
+- ❌ `ARM_CLIENT_SECRET` in a variable group; convert the connection to WIF
 
 ---
 
@@ -442,11 +548,13 @@ security-scan:
 | GitHub Actions → Azure AD | `api://AzureADTokenExchange` | `repo:<org>/<repo>:environment:<env>` |
 | GitHub Actions → GCP | value passed via `audience` parameter | repo + ref or environment |
 | GitLab CI → AWS | matches `$CI_SERVER_URL` | project path + ref |
+| Azure DevOps → Azure (Entra ID) | `api://AzureADTokenExchange` | one federated credential per service connection. New connections: issuer `https://login.microsoftonline.com/<tenant-id>/v2.0`, subject `<entra-prefix>/sc/<org-id>/<service-connection-id>`. Legacy: issuer `https://vstoken.dev.azure.com/<org-id>`, subject `sc://<org>/<project>/<service-connection-name>` (issuer retires 2027-07-01) |
 
-Use keyless OIDC for all three clouds (AWS OIDC / Azure federated credentials / GCP Workload Identity Federation). Static keys only if OIDC is unavailable (non-OIDC CI / self-hosted runners) - prefer keyless.
+Use keyless OIDC for all three clouds (AWS OIDC / Azure federated credentials / GCP Workload Identity Federation); in Azure DevOps use a workload identity federation service connection. Static keys only if OIDC is unavailable (non-OIDC CI / self-hosted runners) - prefer keyless.
 
 **Rules:**
 - ✅ pin `aud` to the exact value from the table
+- ✅ Azure DevOps: copy issuer, subject and audience exactly from the service connection edit dialog; renaming the org, project or a manually created connection breaks a `sc://` subject match
 - ✅ pin `sub` to a specific repo + branch or environment — no wildcards across org/repo
 - ❌ `sub` wildcards like `repo:*:*` or `repo:<org>/*:ref:*` let any repo assume the role
 - ❌ mismatched `aud` → token rejected with opaque error; fix `aud` per table, do not relax `sub`
@@ -595,6 +703,7 @@ Common model mistakes to correct before returning pipeline recommendations:
 - copies CI action/task versions from memory (`actions/checkout@v4`, `@master`, `:latest` images) - look up the current release; pin third-party actions to a commit SHA, first-party (`actions/*`) to at least a major tag
 - skips the policy/security stage despite the pipeline claiming compliance
 - grants CI long-lived static cloud credentials instead of OIDC / workload-identity federation
+- stores a service principal client secret (`ARM_CLIENT_SECRET`) in an Azure DevOps variable group instead of using a workload identity federation service connection
 - writes OIDC trust policies with wildcard `sub` claims (`repo:*:*`, `repo:<org>/*:ref:*`) — any repo or branch can assume the role
 - mismatches the `aud` claim between CI platform and cloud provider, then relaxes `sub` to "fix" the resulting error
 - implements scheduled "drift detection" as `terraform apply -auto-approve` on cron — silently reverts out-of-band changes; use `plan -detailed-exitcode` + alert
