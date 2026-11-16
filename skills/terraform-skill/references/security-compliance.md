@@ -43,11 +43,14 @@ brew install trivy
 curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
 # In CI
-- uses: aquasecurity/trivy-action@master
+- uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
   with:
     scan-type: 'config'
     scan-ref: '.'
 ```
+
+- ✅ Pin third-party actions to a full commit SHA with the version in a comment
+- ❌ `@master` or mutable tags: in March 2026 attackers force-pushed 76 `trivy-action` tags to credential-stealing code ([GHSA-69fq-xp46-6x23](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23)); tags are now `v`-prefixed
 
 **Note:** Trivy now includes tfsec's rule set; tfsec itself is in maintenance mode since its absorption into Trivy (2022), but still receives maintenance releases. Both are maintained by Aqua Security.
 
