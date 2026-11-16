@@ -1,3 +1,17 @@
+# [1.18.0](https://github.com/antonbabenko/terraform-skill/compare/v1.17.2...v1.18.0) (2026-11-16)
+
+
+### Bug Fixes
+
+* update CI action versions and fix drift-detection and plugin-cache examples ([#60](https://github.com/antonbabenko/terraform-skill/issues/60)) ([eacc81e](https://github.com/antonbabenko/terraform-skill/commit/eacc81e299d3779e50e187df14e50ddd117e3201))
+
+
+### Features
+
+* add Azure DevOps pipeline and Azure-specific examples ([#61](https://github.com/antonbabenko/terraform-skill/issues/61)) ([6969cd0](https://github.com/antonbabenko/terraform-skill/commit/6969cd02e48da99267f4b58eebb3e16a4311d1e0))
+
+
+
 ## [1.17.2](https://github.com/antonbabenko/terraform-skill/compare/v1.17.1...v1.17.2) (2026-10-24)
 
 
@@ -31,15 +45,6 @@
 ### Features
 
 * treat AWS/Azure/GCP equally with cross-cloud equivalence map and progressive cloud routing ([#33](https://github.com/antonbabenko/terraform-skill/issues/33)) ([75619bc](https://github.com/antonbabenko/terraform-skill/commit/75619bccc1f9876a4032115c8c7672370431fb7b))
-
-
-
-# [1.15.0](https://github.com/antonbabenko/terraform-skill/compare/v1.14.0...v1.15.0) (2026-05-23)
-
-
-### Features
-
-* Provisioners as Last Resort (closes row 16) ([#31](https://github.com/antonbabenko/terraform-skill/issues/31)) ([cc78c5a](https://github.com/antonbabenko/terraform-skill/commit/cc78c5a4347dec85ac405082b38e139fccb67b0e))
 
 
 
