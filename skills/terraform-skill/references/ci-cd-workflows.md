@@ -34,8 +34,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
 
       - name: Terraform Format
         run: terraform fmt -check -recursive
@@ -46,9 +46,9 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - uses: terraform-linters/setup-tflint@v4
+      - uses: terraform-linters/setup-tflint@v6
         with:
-          tflint_version: v0.50.3
+          tflint_version: v0.66.0
       - name: TFLint Init
         run: tflint --init
       - name: TFLint
@@ -58,15 +58,15 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
 
       - name: Run Terraform Tests
         run: terraform test
 
       # Or for Terratest:
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: 'stable'
 
@@ -79,8 +79,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
 
       - name: Terraform Init
         run: terraform init
@@ -89,7 +89,7 @@ jobs:
         run: terraform plan -out=tfplan
 
       - name: Upload Plan
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tfplan
           path: tfplan
@@ -100,11 +100,11 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
 
       - name: Download Plan
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tfplan
 
@@ -118,29 +118,32 @@ jobs:
 ### With Cost Estimation (Infracost)
 
 ```yaml
+  # Job-level permissions: pull-requests: write (to post the PR comment)
   cost-estimate:
-    needs: plan
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          path: head
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base
 
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v2
+      - name: Diff cost and post PR comment
+        uses: infracost/actions/diff@v5
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      - name: Generate Cost Estimate
-        run: |
-          infracost breakdown --path . \
-            --format json \
-            --out-file /tmp/infracost.json
-
-      - name: Post Cost Comment
-        uses: infracost/actions/comment@v1
-        with:
-          path: /tmp/infracost.json
-          behavior: update
+          base-path: base
+          head-path: head
 ```
+
+- ✅ Use `infracost/actions/diff@v5` (PR comment) or `scan@v5` (push to main); both run in Docker, so use Linux runners
+- ❌ `infracost/actions/comment@v1` no longer exists; `setup@*` + `infracost breakdown` + `infracost comment` is the legacy flow
 
 ---
 
@@ -158,7 +161,7 @@ variables:
   TF_ROOT: ${CI_PROJECT_DIR}
 
 .terraform_template:
-  image: hashicorp/terraform:latest
+  image: hashicorp/terraform:1.17  # pin minor, never :latest
   before_script:
     - cd ${TF_ROOT}
     - terraform init
@@ -306,10 +309,10 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_CLEANUP_ROLE_ARN }}
           aws-region: us-east-1
@@ -390,17 +393,18 @@ terraform {
 jobs:
   plan:
     runs-on: ubuntu-latest
-    env:
-      TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/terraform-plugin-cache
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
 
+      # job-level `env` cannot read the `runner` context; export via GITHUB_ENV
       - name: Create plugin cache dir
-        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+        run: |
+          echo "TF_PLUGIN_CACHE_DIR=$RUNNER_TEMP/terraform-plugin-cache" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/terraform-plugin-cache"
 
       - name: Cache Terraform Plugins
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/terraform-plugin-cache
           key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
@@ -415,16 +419,16 @@ jobs:
 security-scan:
   runs-on: ubuntu-latest
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Run Trivy
-      uses: aquasecurity/trivy-action@0.29.0
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
       with:
         scan-type: 'config'
         scan-ref: '.'
 
     - name: Run Checkov
-      uses: bridgecrewio/checkov-action@v12.2.0
+      uses: bridgecrewio/checkov-action@v12
       with:
         directory: .
         framework: terraform
@@ -476,15 +480,16 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
       - run: terraform init
       - name: Plan (detect drift)
         id: plan
         run: terraform plan -detailed-exitcode -out=plan.bin
         continue-on-error: true
       - name: Alert on drift
-        if: steps.plan.outcome == 'failure' && steps.plan.outputs.exitcode == '2'
+        # setup-terraform's wrapper treats exit 2 as success, so check exitcode, not outcome
+        if: steps.plan.outputs.exitcode == '2'
         run: |
           echo "Drift detected. Requires human review before apply."
           # send to Slack / PagerDuty / issue tracker
@@ -499,7 +504,7 @@ jobs:
   reconcile:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: terraform apply -auto-approve
 ```
 
@@ -517,7 +522,7 @@ projects:
   - name: production
     dir: environments/prod
     workspace: default
-    terraform_version: 1.12.0
+    terraform_version: 1.17.2
     workflow: custom
 
 workflows:
@@ -552,12 +557,12 @@ workflows:
 ```hcl
 # versions.tf - Pin versions
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = "~> 1.17"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -587,6 +592,7 @@ Common model mistakes to correct before returning pipeline recommendations:
 - re-runs `terraform plan` inside the apply job instead of consuming the reviewed plan artifact from the plan stage
 - omits environment protection / approval gates on production apply
 - uses unpinned provider versions, causing drift between local and CI runs
+- copies CI action/task versions from memory (`actions/checkout@v4`, `@master`, `:latest` images) - look up the current release; pin third-party actions to a commit SHA, first-party (`actions/*`) to at least a major tag
 - skips the policy/security stage despite the pipeline claiming compliance
 - grants CI long-lived static cloud credentials instead of OIDC / workload-identity federation
 - writes OIDC trust policies with wildcard `sub` claims (`repo:*:*`, `repo:<org>/*:ref:*`) — any repo or branch can assume the role
