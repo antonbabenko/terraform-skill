@@ -1,3 +1,12 @@
+## [1.18.2](https://github.com/antonbabenko/terraform-skill/compare/v1.18.1...v1.18.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* install the nested skill dir for Cursor, Copilot, Kiro and Antigravity ([#68](https://github.com/antonbabenko/terraform-skill/issues/68)) ([c666a43](https://github.com/antonbabenko/terraform-skill/commit/c666a4313a6af3a097589bd3f523550661ae0b0b))
+
+
+
 ## [1.18.1](https://github.com/antonbabenko/terraform-skill/compare/v1.18.0...v1.18.1) (2026-11-19)
 
 
@@ -36,15 +45,6 @@
 ### Bug Fixes
 
 * use ASCII hyphens in Safe Destroy Protocol guidance ([#45](https://github.com/antonbabenko/terraform-skill/issues/45)) ([a802404](https://github.com/antonbabenko/terraform-skill/commit/a80240463c8795d99bfc37c0a379cf0150425079))
-
-
-
-# [1.17.0](https://github.com/antonbabenko/terraform-skill/compare/v1.16.0...v1.17.0) (2026-05-30)
-
-
-### Features
-
-* ship terraform-skill as a Kiro Power ([349024d](https://github.com/antonbabenko/terraform-skill/commit/349024da7d1b283b2b12b2a10cba13c98ace0299))
 
 
 
