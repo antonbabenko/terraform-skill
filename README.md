@@ -87,10 +87,12 @@ Update by re-running the install command.
 <summary>Cursor</summary>
 
 ```bash
-git clone https://github.com/antonbabenko/terraform-skill.git ~/.cursor/skills/terraform-skill
+git clone https://github.com/antonbabenko/terraform-skill.git
+mkdir -p ~/.cursor/skills
+cp -R terraform-skill/skills/terraform-skill ~/.cursor/skills/
 ```
 
-Cursor auto-discovers skills from `.agents/skills/` and `.cursor/skills/`.
+Cursor discovers `~/.cursor/skills/<name>/SKILL.md` and `.cursor/skills/<name>/SKILL.md`, one level deep, and may not follow symlinks: copy the skill directory, not the repo root. Update: `git pull` in the clone, `rm -rf ~/.cursor/skills/terraform-skill`, then re-run the `cp`.
 
 </details>
 
@@ -100,10 +102,12 @@ Cursor auto-discovers skills from `.agents/skills/` and `.cursor/skills/`.
 ```bash
 /plugin install https://github.com/antonbabenko/terraform-skill
 # or
-git clone https://github.com/antonbabenko/terraform-skill.git ~/.copilot/skills/terraform-skill
+git clone https://github.com/antonbabenko/terraform-skill.git
+mkdir -p ~/.copilot/skills
+ln -s "$(pwd)/terraform-skill/skills/terraform-skill" ~/.copilot/skills/terraform-skill
 ```
 
-Copilot auto-discovers skills from `.copilot/skills/`.
+Copilot discovers `~/.copilot/skills/<name>/SKILL.md` (user) and `.github/skills/`, `.agents/skills/`, `.claude/skills/` (project), one level deep: link the skill directory, not the repo root.
 
 </details>
 
@@ -161,10 +165,12 @@ Autohand Code discovers skills from `~/.autohand/skills/` and `.autohand/skills/
 <summary>Kiro</summary>
 
 ```bash
-git clone https://github.com/antonbabenko/terraform-skill.git ~/.kiro/skills/terraform-skill
+git clone https://github.com/antonbabenko/terraform-skill.git
+mkdir -p ~/.kiro/skills
+ln -s "$(pwd)/terraform-skill/skills/terraform-skill" ~/.kiro/skills/terraform-skill
 ```
 
-Kiro auto-discovers skills from `.kiro/skills/` (workspace) and `~/.kiro/skills/` (global).
+Kiro discovers `.kiro/skills/<name>/SKILL.md` (workspace) and `~/.kiro/skills/<name>/SKILL.md` (global), one level deep: link the skill directory, not the repo root.
 
 </details>
 
@@ -173,10 +179,11 @@ Kiro auto-discovers skills from `.kiro/skills/` (workspace) and `~/.kiro/skills/
 
 ```bash
 git clone https://github.com/antonbabenko/terraform-skill.git
-ln -s "$(pwd)/terraform-skill/skills/terraform-skill" ~/.gemini/config/skills/terraform-skill
+mkdir -p ~/.gemini/config/skills
+cp -R terraform-skill/skills/terraform-skill ~/.gemini/config/skills/
 ```
 
-Update with `git pull`.
+Antigravity reads `~/.gemini/config/skills/<name>/` and `<workspace>/.agents/skills/<name>/`. It ignores symlinks that point outside the workspace, so copy the directory. Update: `git pull` in the clone, `rm -rf ~/.gemini/config/skills/terraform-skill`, then re-run the `cp`.
 
 </details>
 
