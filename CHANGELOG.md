@@ -1,3 +1,12 @@
+## [1.18.1](https://github.com/antonbabenko/terraform-skill/compare/v1.18.0...v1.18.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* correct examples and claims from [#64](https://github.com/antonbabenko/terraform-skill/issues/64) and [#65](https://github.com/antonbabenko/terraform-skill/issues/65), lint doc snippets in CI ([#66](https://github.com/antonbabenko/terraform-skill/issues/66)) ([a800dd3](https://github.com/antonbabenko/terraform-skill/commit/a800dd3397c7e0633cf3eb6f136473da120e2213))
+
+
+
 # [1.18.0](https://github.com/antonbabenko/terraform-skill/compare/v1.17.2...v1.18.0) (2026-11-16)
 
 
@@ -36,15 +45,6 @@
 ### Features
 
 * ship terraform-skill as a Kiro Power ([349024d](https://github.com/antonbabenko/terraform-skill/commit/349024da7d1b283b2b12b2a10cba13c98ace0299))
-
-
-
-# [1.16.0](https://github.com/antonbabenko/terraform-skill/compare/v1.15.0...v1.16.0) (2026-05-24)
-
-
-### Features
-
-* treat AWS/Azure/GCP equally with cross-cloud equivalence map and progressive cloud routing ([#33](https://github.com/antonbabenko/terraform-skill/issues/33)) ([75619bc](https://github.com/antonbabenko/terraform-skill/commit/75619bccc1f9876a4032115c8c7672370431fb7b))
 
 
 
