@@ -186,11 +186,11 @@ These rules tune content for the **primary reader: an LLM retrieving facts to an
 - [ ] Every code block / table adds a fact not in surrounding prose
 - [ ] Subsection under 400 tokens
 - [ ] Anchors referenced from SKILL.md remain stable
-- [ ] For substantive new sections, get a second-opinion review from an external LLM reviewer for format/compression before merge
+- [ ] `/deliberation:consensus` run on the changed sections, verdict in the PR body (see below)
 
 ### Factual Verification Rules (enforce in every PR review)
 
-Issues #64 and #65 found 19 wrong claims and snippets. Every one was LLM-written text that nobody executed. Seventeen sat in content that had passed multi-LLM review, and three were introduced by those reviews. Agreement between models is not evidence: they share training-data blind spots and answer from memory.
+Issues #64 and #65 found 19 wrong claims and snippets. Every one was LLM-written text that nobody executed. Seventeen sat in content that had passed multi-LLM review across several model families, and three were introduced by those reviews. Cross-family review catches what one model misses, but those reviewers worked from memory: one panel had source fetching turned off, the other saw a one-line summary per change instead of the edited sections, and neither saw command output.
 
 | Claim type | Required evidence in the PR body |
 |------------|----------------------------------|
@@ -200,8 +200,17 @@ Issues #64 and #65 found 19 wrong claims and snippets. Every one was LLM-written
 
 - ✅ Paste the decisive command output or source line next to each changed claim
 - ✅ After fixing a claim, `rg` the whole repo for every sibling occurrence and fix all of them in the same PR
-- ✅ Give LLM reviewers the full edited sections plus the evidence, allow source fetching, and ask them to check facts, not only format
-- ❌ Never accept "verified by consensus" or a diff summary as evidence; unflagged lines are unreviewed, not correct
+- ❌ Never accept consensus without evidence, or a review of a diff summary; unflagged lines are unreviewed, not correct
+
+### Consensus Review (required for content PRs)
+
+Every PR that changes `SKILL.md`, `references/`, or install steps in `README.md` runs `/deliberation:consensus` from the [Deliberation plugin](https://github.com/antonbabenko/agent-plugins) (`/plugin marketplace add antonbabenko/agent-plugins`, then `/plugin install deliberation@antonbabenko`). It reviews with models from different families and converges only on cross-model agreement.
+
+- ✅ Give the panel the full edited sections, the evidence from the table above, and permission to fetch sources; ask it to check facts, not only format
+- ✅ Reproduce every objection before acting on it; reviewers also produce confident false findings
+- ✅ Paste in the PR body: models used, final verdict, each objection and how it was resolved (fixed, or rejected with evidence)
+- ✅ Contributors without the plugin: say so in the PR; a maintainer runs it before merge
+- ❌ Never treat consensus as a substitute for execution output or primary sources; it checks the evidence, it does not replace it
 - ❌ Never relabel a broken block as `text` to silence the linter; use `text` only for trees, pseudo-code and mixed shell/HCL
 
 ## PR Requirements

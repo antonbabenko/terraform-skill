@@ -247,6 +247,7 @@ One excellent example beats many mediocre ones.
 **Good:**
 
 - Complete and runnable, and actually run: paste the output in the PR (see "Factual Verification Rules" in AGENTS.md)
+- Reviewed with `/deliberation:consensus` before merge (see "Consensus Review" in AGENTS.md)
 - Passes `python3 .github/scripts/check_snippets.py <file>` (CI-enforced)
 - Commented to explain WHY
 - From a real scenario
