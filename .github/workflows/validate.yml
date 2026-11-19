@@ -130,14 +130,14 @@ jobs:
               if not (isinstance(value, str) and SEMVER.match(value)):
                   print(
                       f"❌ ERROR: {label} is not a valid semver: {value!r}. "
-                      f"CI owns these; do not hand-edit (see CLAUDE.md).")
+                      f"CI owns these; do not hand-edit (see AGENTS.md).")
                   sys.exit(1)
 
           if skill_version != manifest_version:
               print(
                   f"❌ ERROR: version mismatch - SKILL.md metadata.version="
                   f"{skill_version!r} vs {manifest_path}={manifest_version!r}. "
-                  f"CI owns these; do not hand-edit (see CLAUDE.md).")
+                  f"CI owns these; do not hand-edit (see AGENTS.md).")
               sys.exit(1)
 
           print(f"✅ Codex manifest version in sync ({manifest_version})")

@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for AI coding agents (Claude Code, Codex, Copilot, Cursor, Gemini CLI, Kiro, OpenCode and others) and human contributors working in this repository.
 
 > **For End Users:** See [README.md](README.md) for installation and usage.
 >
@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A **Claude Code skill** - executable documentation that Claude loads to provide Terraform/OpenTofu expertise. It encodes terraform-best-practices.com patterns into Claude's context as version-controlled AI instructions.
+An **agent skill** - executable documentation that AI coding agents load to provide Terraform/OpenTofu expertise. It encodes terraform-best-practices.com patterns into the agent's context as version-controlled instructions. One `SKILL.md` serves every agent that reads the skill format; install paths per agent are in [README.md](README.md#installation).
 
 It also ships as a **Kiro Power**: the repo-root `POWER.md` (+ optional
 `mcp.json`) is generated from `SKILL.md`, so the skill content is shared, not
@@ -19,7 +19,7 @@ forked.
 ```
 terraform-skill/
 ├── skills/
-│   └── terraform-skill/             # Skill autodiscovered by Claude Code plugin system
+│   └── terraform-skill/             # Skill discovered by agents that read skills/<name>/SKILL.md
 │       ├── SKILL.md                 # Core skill file (~305 lines) — single source of truth
 │       └── references/              # Reference files loaded on demand
 │           ├── ci-cd-workflows.md
@@ -30,6 +30,7 @@ terraform-skill/
 │           ├── security-compliance.md
 │           ├── state-management.md
 │           └── testing-frameworks.md
+├── .codex-plugin/plugin.json        # GENERATED Codex manifest (version synced by release), CI-owned
 ├── .claude-plugin/plugin.json       # Copilot CLI / Claude Code manifest: hand-maintained, no version/$schema/mcpServers (CI-checked)
 ├── POWER.md                         # GENERATED Kiro Power (from SKILL.md) — CI-owned, never hand-edit
 ├── mcp.json                         # Optional Kiro MCP (read-only terraform-mcp-server)
@@ -93,9 +94,9 @@ grep -oP '\[.*?\]\(references/.*?\.md.*?\)' SKILL.md references/*.md | \
 
 No automated suite. Manual flow:
 1. Edit `SKILL.md` or a `references/*.md` file
-2. Reload the skill in Claude Code
+2. Reload the skill in your agent (Claude Code, Codex, Gemini CLI, ...)
 3. Run real Terraform queries (e.g., "Create a Terraform module with tests")
-4. Confirm Claude applies the new patterns
+4. Confirm the agent applies the new patterns
 5. Re-check `tests/baseline-scenarios.md` for regressions
 
 ## Commit Conventions & Releases
@@ -130,7 +131,7 @@ The release workflow automatically:
 
 ### Plugin Structure
 
-The skill lives at `skills/terraform-skill/SKILL.md` — Claude Code autodiscovers any `skills/<name>/SKILL.md` (see [plugins reference](https://code.claude.com/docs/en/plugins-reference)). Reference files sit next to it under `skills/terraform-skill/references/` so relative links keep working.
+The skill lives at `skills/terraform-skill/SKILL.md`. Plugin and skill loaders (Claude Code, Codex, Copilot CLI, Gemini CLI `skills install --path`) discover `skills/<name>/SKILL.md`; per-agent install steps are in [README.md](README.md#installation). Reference files sit next to it under `skills/terraform-skill/references/` so relative links keep working.
 
 ### YAML Frontmatter (required fields)
 

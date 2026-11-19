@@ -376,7 +376,7 @@ How the skill uses it:
 
 ## Contributing
 
-See [CLAUDE.md](CLAUDE.md) for skill development guidelines, content structure, how to propose improvements, and the validation approach.
+See [AGENTS.md](AGENTS.md) for skill development guidelines, content structure, how to propose improvements, and the validation approach.
 
 Report bugs or request features via [GitHub Issues](https://github.com/antonbabenko/terraform-skill/issues).
 

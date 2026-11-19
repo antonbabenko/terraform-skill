@@ -61,7 +61,7 @@ Improvements:
 
 ## Factual Evidence (REQUIRED for any changed claim or snippet)
 
-<!-- Model agreement, including multi-LLM consensus, is not evidence. See "Factual Verification Rules" in CLAUDE.md. -->
+<!-- Model agreement, including multi-LLM consensus, is not evidence. See "Factual Verification Rules" in AGENTS.md. -->
 
 | Changed claim / snippet | Evidence (command output or primary-source URL) |
 |-------------------------|-------------------------------------------------|
