@@ -130,14 +130,14 @@ jobs:
               if not (isinstance(value, str) and SEMVER.match(value)):
                   print(
                       f"❌ ERROR: {label} is not a valid semver: {value!r}. "
-                      f"CI owns these; do not hand-edit (see CLAUDE.md).")
+                      f"CI owns these; do not hand-edit (see AGENTS.md).")
                   sys.exit(1)
 
           if skill_version != manifest_version:
               print(
                   f"❌ ERROR: version mismatch - SKILL.md metadata.version="
                   f"{skill_version!r} vs {manifest_path}={manifest_version!r}. "
-                  f"CI owns these; do not hand-edit (see CLAUDE.md).")
+                  f"CI owns these; do not hand-edit (see AGENTS.md).")
               sys.exit(1)
 
           print(f"✅ Codex manifest version in sync ({manifest_version})")
@@ -247,6 +247,31 @@ jobs:
             exit 1
           fi
           echo "✅ No broken links"
+
+      # Docs snippets must pass the real linter for their language (#64, #65):
+      # HCL/JSON/YAML parse, actionlint, opa check, shellcheck errors.
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.17.2
+          terraform_wrapper: false
+
+      - uses: open-policy-agent/setup-opa@v2
+        with:
+          version: 1.22.4
+
+      - name: Install actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12 "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Lint Code Snippets
+        run: |
+          # Self-test: a gate that flags nothing passes silently, so prove it
+          # still catches every known-broken block before trusting it.
+          out=$(python3 .github/scripts/check_snippets.py .github/scripts/testdata/broken-snippets.md || true)
+          grep -qx 'FAIL: 5 broken snippet(s)' <<< "$out" || { echo "$out"; echo "::error::snippet linter self-test failed"; exit 1; }
+          python3 .github/scripts/check_snippets.py \
+            skills/terraform-skill/SKILL.md skills/terraform-skill/references/*.md README.md
 
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v16

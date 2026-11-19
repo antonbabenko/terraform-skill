@@ -168,7 +168,7 @@ Faster `plan`/`apply`, isolated failures, parallel team development.
 
 **Example:**
 
-```hcl
+```text
 # ❌ BAD - One massive composition with everything
 environments/prod/
   main.tf  # 2000 lines, manages VPC, EC2, RDS, S3, IAM, everything
@@ -454,7 +454,7 @@ variable "enable_monitoring" {
 
 ### Variable Naming
 
-```hcl
+```text
 # ✅ Good: Context-specific
 var.vpc_cidr_block          # Not just "cidr"
 var.database_instance_class # Not just "instance_class"

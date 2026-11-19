@@ -102,7 +102,7 @@ The description must focus on WHEN to use (triggers, symptoms), not WHAT the ski
 
 ### LLM Consumption Rules
 
-Every SKILL.md or `references/*.md` addition must follow the rules in [CLAUDE.md §LLM Consumption Rules](CLAUDE.md#llm-consumption-rules-enforce-in-every-pr-review):
+Every SKILL.md or `references/*.md` addition must follow the rules in [AGENTS.md §LLM Consumption Rules](AGENTS.md#llm-consumption-rules-enforce-in-every-pr-review):
 
 - Decision table before playbook
 - No before/after diffs that restate the phase steps
@@ -246,7 +246,9 @@ One excellent example beats many mediocre ones.
 
 **Good:**
 
-- Complete and runnable
+- Complete and runnable, and actually run: paste the output in the PR (see "Factual Verification Rules" in AGENTS.md)
+- Reviewed with `/deliberation:consensus` before merge (see "Consensus Review" in AGENTS.md)
+- Passes `python3 .github/scripts/check_snippets.py <file>` (CI-enforced)
 - Commented to explain WHY
 - From a real scenario
 - Shows the pattern clearly
@@ -410,7 +412,7 @@ See the [Releases section in README.md](README.md#releases) for details.
 
 **For contributors:**
 
-- [CLAUDE.md](CLAUDE.md) — development guidelines, architecture, and LLM Consumption Rules
+- [AGENTS.md](AGENTS.md) — development guidelines, architecture, and LLM Consumption Rules
 - [tests/baseline-scenarios.md](tests/baseline-scenarios.md) — testing scenarios
 
 **Skill standards:**

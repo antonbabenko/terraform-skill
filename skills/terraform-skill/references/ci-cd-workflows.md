@@ -62,6 +62,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: hashicorp/setup-terraform@v4
 
+      - name: Terraform Init
+        run: terraform init -backend=false
+
       - name: Run Terraform Tests
         run: terraform test
 
@@ -162,7 +165,9 @@ variables:
   TF_ROOT: ${CI_PROJECT_DIR}
 
 .terraform_template:
-  image: hashicorp/terraform:1.17  # pin minor, never :latest
+  image:
+    name: hashicorp/terraform:1.17  # pin minor, never :latest
+    entrypoint: [""]  # image ENTRYPOINT is /bin/terraform; GitLab needs a shell
   before_script:
     - cd ${TF_ROOT}
     - terraform init
@@ -333,8 +338,13 @@ stages:
 test:
   runs-on: ubuntu-latest
   steps:
+    - uses: actions/checkout@v7
+    - uses: hashicorp/setup-terraform@v4
+
     - name: Run Unit Tests (Mocked)
-      run: terraform test
+      run: |
+        terraform init -backend=false
+        terraform test
 
     - name: Run Integration Tests
       if: github.ref == 'refs/heads/main'
@@ -562,12 +572,14 @@ Use keyless OIDC for all three clouds (AWS OIDC / Azure federated credentials / 
 ✅ DO — AWS IAM trust-policy `Condition` block (the only non-boilerplate fragment):
 
 ```json
-"Condition": {
-  "StringEquals": {
-    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-  },
-  "StringLike": {
-    "token.actions.githubusercontent.com:sub": "repo:my-org/my-repo:ref:refs/heads/main"
+{
+  "Condition": {
+    "StringEquals": {
+      "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+    },
+    "StringLike": {
+      "token.actions.githubusercontent.com:sub": "repo:my-org/my-repo:ref:refs/heads/main"
+    }
   }
 }
 ```

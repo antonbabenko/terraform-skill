@@ -635,7 +635,7 @@ Format per scenario: terse user prompt, the specific hallucination, expected cor
 - Every rename accompanied by a matching `moved { from = ...; to = ... }` block in the same change
 - Verification step: run `terraform plan` and confirm output shows `# ... has moved` (or equivalent), not destroy/create
 - `moved` as primary mechanism; `terraform state mv` only as fallback when `moved` cannot cross the boundary (different backends, provider migration)
-- Note the limits of `moved` (cannot cross state files, cannot cross providers) and the correct alternatives (`removed` + `import`)
+- Note the limits of `moved` (cannot cross state files; crosses resource types/providers only when the target provider declares the conversion, 1.8+) and the correct alternatives (`removed` + `import`)
 
 **Forbidden signals** (regression if present):
 - Any rename without a `moved` block

@@ -308,51 +308,61 @@ conftest test tfplan.json --policy policy/
 ### Open Policy Agent (OPA)
 
 ```rego
-# policy/s3_encryption.rego
-package terraform.s3
+# policy/s3_encryption.rego - Rego v1 syntax (default since OPA 1.0)
+package main  # conftest evaluates only `main` unless --namespace/--all-namespaces
 
 # AWS provider v4+ moved S3 encryption to the separate
 # aws_s3_bucket_server_side_encryption_configuration resource.
-# Iterate those resources and verify the rule block sets an accepted algorithm.
-
 valid_algorithms := {"aws:kms", "aws:kms:dsse", "AES256"}
 
-# Collect buckets that have an encryption config with a valid algorithm
-encrypted_buckets[bucket] {
-  sse := input.resource_changes[_]
+valid_sse contains sse if {
+  some sse in input.resource_changes
   sse.type == "aws_s3_bucket_server_side_encryption_configuration"
-  rule := sse.change.after.rule[_]
-  algo := rule.apply_server_side_encryption_by_default[_].sse_algorithm
-  valid_algorithms[algo]
-  bucket := sse.change.after.bucket
+  some rule in sse.change.after.rule
+  some d in rule.apply_server_side_encryption_by_default
+  valid_algorithms[d.sse_algorithm]
 }
 
-deny[msg] {
-  sse := input.resource_changes[_]
-  sse.type == "aws_s3_bucket_server_side_encryption_configuration"
-  rule := sse.change.after.rule[_]
-  algo := rule.apply_server_side_encryption_by_default[_].sse_algorithm
-  not valid_algorithms[algo]
+# Literal bucket name in the encryption config
+encrypted contains sse.change.after.bucket if some sse in valid_sse
 
-  msg := sprintf(
-    "S3 encryption config '%s' uses unsupported sse_algorithm '%s' (expected aws:kms or AES256)",
-    [sse.address, algo],
+# bucket = aws_s3_bucket.x.id is unknown at plan time: match the config reference.
+# Config addresses carry no count/for_each key, so compare without it.
+# Root module only; walk configuration.root_module.module_calls for child modules.
+base(addr) := regex.replace(addr, `\[[^\]]*\]$`, "")
+
+encrypted contains ref if {
+  some sse in valid_sse
+  some cfg in input.configuration.root_module.resources
+  cfg.address == base(sse.address)
+  refs := array.concat(
+    object.get(cfg, ["expressions", "bucket", "references"], []),
+    object.get(cfg, ["for_each_expression", "references"], []),
   )
+  some ref in refs
 }
 
-# Flag buckets that have no matching encryption configuration at all.
-deny[msg] {
-  bucket := input.resource_changes[_]
-  bucket.type == "aws_s3_bucket"
-  bucket_name := bucket.change.after.bucket
-  not encrypted_buckets[bucket_name]
+deny contains msg if {
+  some sse in input.resource_changes
+  sse.type == "aws_s3_bucket_server_side_encryption_configuration"
+  some rule in sse.change.after.rule
+  some d in rule.apply_server_side_encryption_by_default
+  not valid_algorithms[d.sse_algorithm]
+  msg := sprintf("S3 encryption config '%s' uses unsupported sse_algorithm '%s'", [sse.address, d.sse_algorithm])
+}
 
-  msg := sprintf(
-    "S3 bucket '%s' has no aws_s3_bucket_server_side_encryption_configuration",
-    [bucket.address],
-  )
+deny contains msg if {
+  some b in input.resource_changes
+  b.type == "aws_s3_bucket"
+  b.change.after != null
+  not encrypted[base(b.address)]
+  not encrypted[b.change.after.bucket]
+  msg := sprintf("S3 bucket '%s' has no aws_s3_bucket_server_side_encryption_configuration", [b.address])
 }
 ```
+
+- ✅ Add a `test_` rule with an unencrypted-bucket fixture and run `conftest verify`: a policy that matches nothing also exits 0
+- ❌ Never use `package terraform.*` with plain `conftest test` - it evaluates 0 rules and passes
 
 ---
 

@@ -59,6 +59,23 @@ Improvements:
 - [ ] Agent doesn't rationalize skipping guidance
 - [ ] No new rationalizations introduced
 
+## Factual Evidence (REQUIRED for any changed claim or snippet)
+
+<!-- Consensus needs evidence to check; it does not replace it. See "Factual Verification Rules" and "Consensus Review" in AGENTS.md. -->
+
+| Changed claim / snippet | Evidence (command output or primary-source URL) |
+|-------------------------|-------------------------------------------------|
+| | |
+
+- [ ] Every executed procedure shows its real output
+- [ ] Every version/flag/argument/tool-name claim cites a CHANGELOG, provider schema, or upstream source
+- [ ] Searched the repo (`rg`) for sibling occurrences of each fixed claim and fixed them all
+- [ ] Ran `/deliberation:consensus` on the changed sections with the evidence above (or noted that a maintainer must run it)
+
+### Consensus Review
+
+<!-- Models used, final verdict, each objection and its resolution (fixed / rejected with evidence) -->
+
 ## Standards Compliance Checklist
 
 ### Frontmatter (if SKILL.md changed)
