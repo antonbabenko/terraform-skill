@@ -493,7 +493,7 @@ moved {
 
 | Limit | Can `moved` cross this? | Alternative |
 |-------|-------------------------|-------------|
-| Provider boundary | No | use `removed` (1.7+) + `import` (1.5+) |
+| Provider / resource type | Only if the target provider declares the conversion (1.8+), e.g. `null_resource` → `terraform_data` (1.9+) | otherwise `removed` (1.7+) + `import` (1.5+) |
 | State file / backend key | No | `state mv` across backends + pre-migration backup |
 | Module removal (module deleted from config) | `moved` block inside removed module silently stops working | add `moved` in the **parent**, not the removed module |
 
@@ -613,7 +613,8 @@ resource "aws_db_instance" "this" {
   # but the data source still reads secret_string into state on refresh.
   # For true state exclusion: use ephemeral (1.10+), manage_master_user_password,
   # or inject via CI env var outside Terraform.
-  password_wo = data.aws_secretsmanager_secret_version.db_password.secret_string
+  password_wo         = data.aws_secretsmanager_secret_version.db_password.secret_string
+  password_wo_version = 1 # required with password_wo; increment to rotate
 }
 
 # ❌ BAD - Secret ends up in state file
@@ -742,7 +743,7 @@ resource "terraform_data" "migration" {
 
 ### Version Constraint Syntax
 
-```hcl
+```text
 # Exact version (avoid unless necessary - inflexible)
 version = "5.0.0"
 
@@ -769,7 +770,7 @@ version = ">= 5.0"  # Any version 5.0 or higher (risky - breaking changes)
 # versions.tf
 terraform {
   # Pin to minor version, allow patch updates
-  required_version = "~> 1.9"  # Allows 1.9.x
+  required_version = "~> 1.9.0"  # >= 1.9.0, < 1.10.0
 }
 ```
 
@@ -801,7 +802,7 @@ module "vpc" {
 # Development - allow flexibility
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.1"  # Allow patch updates in dev
+  version = "~> 5.1.0"  # Allow patch updates in dev
 }
 ```
 
@@ -825,7 +826,7 @@ module "vpc" {
 
 ### Version Management Workflow
 
-```hcl
+```text
 # Step 1: Lock versions in versions.tf
 terraform {
   required_version = "~> 1.9"
@@ -965,12 +966,14 @@ data "aws_secretsmanager_secret_version" "db_password" {
 }
 
 resource "aws_db_instance" "this" {
-  engine   = "mysql"
-  username = "admin"
+  engine         = "mysql"
+  instance_class = "db.t3.micro"
+  username       = "admin"
   # password_wo: resource argument stays out of state (1.11+).
   # Data source still reads secret_string into state on refresh.
   # For true state exclusion: ephemeral (1.10+), manage_master_user_password, or CI env var.
-  password_wo = data.aws_secretsmanager_secret_version.db_password.secret_string
+  password_wo         = data.aws_secretsmanager_secret_version.db_password.secret_string
+  password_wo_version = 1 # required with password_wo; increment to rotate
 }
 ```
 
@@ -981,7 +984,7 @@ Pre-1.11 fallback: use the same data source without `password_wo`; rotation must
 1. Create secret in AWS Secrets Manager outside Terraform
 2. Replace `random_password` / variable with `data "aws_secretsmanager_secret_version"`
 3. On 1.11+: use `password_wo`
-4. Apply, then `terraform show | grep -i password` — must be empty
+4. Apply, then `terraform state pull | jq -e --arg s "$KNOWN_SECRET" '[.. | strings | select(contains($s))] | length == 0'` must exit 0 (`terraform show` prints `(sensitive value)` while state holds the plaintext; `grep` misses JSON-escaped values)
 
 ---
 
@@ -1049,7 +1052,7 @@ Common model mistakes when generating HCL. Correct these before returning code:
 - silently emits 1.11+ features (S3 native lock, `write_only`, `removed`) without checking the runtime floor
 - uses `nonsensitive()` to "fix" a sensitive value appearing in plan output — this leaks secrets into CI artifacts
 - conflates `sensitive = true` with `ephemeral` (1.10+); only `ephemeral` actually stays out of state
-- writes a `moved` block expecting it to cross provider boundaries; it cannot
+- writes a cross-type/cross-provider `moved` block without checking that the target provider supports the conversion (1.8+)
 - leaves `moved` blocks inside a module that itself is being removed — the moves silently no-op, resources get destroyed
 - emits CLI `terraform import` in automation when declarative `import` blocks (1.5+) give a reviewable, VCS-tracked alternative
 - emits `ignore_changes = all` or broad ignore lists to silence plan output instead of diagnosing drift root cause

@@ -94,7 +94,7 @@ terraform apply -refresh-only
 # Backup state to file
 terraform state pull > backup-$(date +%Y%m%d).tfstate
 
-# Restore state from backup (DANGEROUS)
+# Restore state from backup (DANGEROUS; add -force if remote serial is higher)
 terraform state push backup.tfstate
 
 # Force unlock stuck state lock
@@ -119,7 +119,7 @@ terraform init -reconfigure
 # Pass backend config at runtime
 terraform init \
   -backend-config="key=prod/terraform.tfstate" \
-  -backend-config="dynamodb_table=terraform-locks"
+  -backend-config="use_lockfile=true"
 
 # Or use config file
 terraform init -backend-config=backend-prod.hcl
@@ -202,7 +202,7 @@ Need to test Terraform/OpenTofu code?
 - ✅ Keep Terratest for complex integration
 - ✅ Import blocks from 1.5 available for declarative imports with `-generate-config-out`
 
-### Terraform 1.7+ / OpenTofu 1.7+
+### Terraform 1.7+ / OpenTofu 1.8+
 
 - ✅ NEW: Mock providers for unit testing
 - ✅ Reduce costs with mocking
@@ -217,7 +217,7 @@ Need to test Terraform/OpenTofu code?
 | **Governance** | HashiCorp (single vendor) | Linux Foundation (community-driven) |
 | **Latest Version** | 1.14+ | 1.11+ |
 | **Native Testing** | 1.6+ | 1.6+ |
-| **Mock Providers** | 1.7+ | 1.7+ |
+| **Mock Providers** | 1.7+ | 1.8+ |
 | **Feature Parity** | Reference implementation | Compatible fork with some additions |
 | **Enterprise Support** | HCP Terraform, Terraform Cloud | Multiple vendors |
 | **Migration Path** | N/A | Drop-in replacement for Terraform ≤1.5.x; feature-compatible fork thereafter with divergence on encryption, mock providers, provider functions, and other post-1.6 additions. Verify specific feature availability per version. |
@@ -287,7 +287,7 @@ bucketName := fmt.Sprintf("test-bucket-%s", uniqueId)
 
 1. **Use mocking for unit tests** (Terraform 1.7+)
    ```hcl
-   mock_provider "aws" { ... }
+   mock_provider "aws" {}
    ```
 
 2. **Implement resource TTL tags**
@@ -379,8 +379,13 @@ aws s3api get-object \
   --version-id PREVIOUS_VERSION_ID \
   terraform.tfstate.restored
 
-# Push restored state
-terraform state push terraform.tfstate.restored
+# Back up current state and confirm lineage matches before overwriting
+terraform state pull > pre-restore-backup.tfstate
+old=$(jq -er .lineage terraform.tfstate.restored) && cur=$(jq -er .lineage pre-restore-backup.tfstate) \
+  && [ "$old" = "$cur" ] || { echo "lineage mismatch or unreadable state"; exit 1; }
+
+# -force required: the restored version has a lower serial than remote
+terraform state push -force terraform.tfstate.restored
 ```
 
 **If no backup exists:**
@@ -558,7 +563,7 @@ terraform validate
 ### Modern Features Check
 
 - [ ] Using `try()` not `element(concat())`
-- [ ] Secrets use write-only arguments or external data sources (not in state)
+- [ ] Secrets use write-only arguments (1.11+) fed from ephemeral resources or runtime input; data source results are stored in state
 - [ ] `nullable = false` set on non-null variables
 - [ ] `optional()` used in object types where applicable (Terraform 1.3+)
 - [ ] Variable validation blocks added where constraints needed
@@ -600,10 +605,10 @@ Required documentation for all modules:
 
 | Component | Recommendation | Example |
 |-----------|----------------|---------|
-| **Terraform** | Pin minor, allow patch | `required_version = "~> 1.9"` |
+| **Terraform** | Pin minor, allow patch | `required_version = "~> 1.9.0"` |
 | **Providers** | Pin major, allow minor/patch | `version = "~> 5.0"` |
 | **Modules (prod)** | Pin exact version | `version = "5.1.2"` |
-| **Modules (dev)** | Allow patch updates | `version = "~> 5.1"` |
+| **Modules (dev)** | Allow patch updates | `version = "~> 5.1.0"` |
 
 ### Update Workflow
 
@@ -684,7 +689,7 @@ aws secretsmanager create-secret --name prod-db-password --secret-string "..."
 # Step 3: Use write-only argument (Terraform 1.11+)
 # Step 4: Remove random_password resource or variable
 # Step 5: Apply and verify secret not in state
-terraform show | grep -i password  # Should not appear
+terraform state pull | jq -e --arg s "$KNOWN_SECRET" '[.. | strings | select(contains($s))] | length == 0'  # exit 0 = absent; `terraform show` masks values as (sensitive value)
 ```
 
 ### Refactoring Decision Tree
@@ -745,7 +750,7 @@ resource "aws_s3_bucket" "bucket" { }
 
 ### Variable Naming
 
-```hcl
+```text
 # ✅ Good: Context-specific
 var.vpc_cidr_block
 var.database_instance_class

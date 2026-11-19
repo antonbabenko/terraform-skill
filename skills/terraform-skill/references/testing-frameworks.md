@@ -83,7 +83,7 @@ terraform show -json tfplan | jq '.'
 
 ### Basic Structure
 
-> **Test discovery:** `terraform test` finds `*.tftest.hcl` files under `tests/` relative to the module root. Use `-filter=<path>` to scope to a specific file.
+> **Test discovery:** `terraform test` / `tofu test` load `*.tftest.hcl` from the module root plus one test directory (default `tests/`, not recursive). For `tests/unit/`, run `terraform test -test-directory=tests/unit`. `-filter=<path>` only matches files in those two locations.
 
 ```hcl
 # tests/s3_bucket.tftest.hcl
@@ -112,10 +112,10 @@ run "verify_encryption" {
 
 **Always use Terraform MCP to validate resource schemas before writing tests:**
 
-```bash
+```text
 # Example workflow in Claude Code:
 # 1. Search for provider documentation
-mcp__terraform__search_providers({
+mcp__terraform__search_provider_docs({
   provider_name: "aws",
   provider_namespace: "hashicorp",
   service_slug: "s3_bucket_server_side_encryption_configuration",

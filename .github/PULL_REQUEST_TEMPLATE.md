@@ -59,6 +59,18 @@ Improvements:
 - [ ] Agent doesn't rationalize skipping guidance
 - [ ] No new rationalizations introduced
 
+## Factual Evidence (REQUIRED for any changed claim or snippet)
+
+<!-- Model agreement, including multi-LLM consensus, is not evidence. See "Factual Verification Rules" in CLAUDE.md. -->
+
+| Changed claim / snippet | Evidence (command output or primary-source URL) |
+|-------------------------|-------------------------------------------------|
+| | |
+
+- [ ] Every executed procedure shows its real output
+- [ ] Every version/flag/argument/tool-name claim cites a CHANGELOG, provider schema, or upstream source
+- [ ] Searched the repo (`rg`) for sibling occurrences of each fixed claim and fixed them all
+
 ## Standards Compliance Checklist
 
 ### Frontmatter (if SKILL.md changed)

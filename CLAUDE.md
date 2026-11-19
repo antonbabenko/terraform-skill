@@ -38,6 +38,7 @@ terraform-skill/
 │   ├── compliance-verification.md
 │   └── rationalization-table.md
 └── .github/
+    ├── scripts/check_snippets.py    # Lints fenced code blocks (CI, required)
     ├── release/
     │   ├── pre-commit.js            # Release version-sync hook (SKILL.md/codex/POWER.md)
     │   └── build-power.js           # POWER.md generator (`--check` for CI)
@@ -59,7 +60,7 @@ release `pre-commit.js` hook. Never hand-edit them — `validate.yml` runs
 
 ### Validation
 
-CI runs automatically on PRs touching `SKILL.md`, `references/**/*.md`, or `.claude-plugin/**`. To check locally:
+CI runs on every PR (`Validate Skill Files` is a required check). To check locally:
 
 ```bash
 # Check SKILL.md line count (soft target ~300 lines; CI warns only above 500)
@@ -75,6 +76,11 @@ required = {'name', 'description'}
 missing = required - set(fm.keys())
 print('Missing:', missing) if missing else print('Frontmatter OK')
 "
+
+# Lint every fenced code block with its real tool (needs terraform, opa,
+# actionlint, shellcheck). CI runs the same script in the required check.
+python3 .github/scripts/check_snippets.py \
+  skills/terraform-skill/SKILL.md skills/terraform-skill/references/*.md README.md
 
 # Check for broken internal links (run from the skill directory)
 cd skills/terraform-skill
@@ -181,9 +187,25 @@ These rules tune content for the **primary reader: an LLM retrieving facts to an
 - [ ] Anchors referenced from SKILL.md remain stable
 - [ ] For substantive new sections, get a second-opinion review from an external LLM reviewer for format/compression before merge
 
+### Factual Verification Rules (enforce in every PR review)
+
+Issues #64 and #65 found 19 wrong claims and snippets. Every one was LLM-written text that nobody executed. Seventeen sat in content that had passed multi-LLM review, and three were introduced by those reviews. Agreement between models is not evidence: they share training-data blind spots and answer from memory.
+
+| Claim type | Required evidence in the PR body |
+|------------|----------------------------------|
+| Snippet (HCL, YAML, Rego, JSON, shell) | `check_snippets.py` passes (CI-enforced); Rego also needs `conftest verify` with a failing fixture |
+| Procedure (install, state recovery, CI template, test layout) | Output of running it end to end on a scratch module (local backend, `random`/`null`/`terraform_data`) |
+| Version, flag, argument, resource attribute, MCP tool name | Primary source: upstream CHANGELOG, provider schema (`terraform providers schema -json`), or upstream source/docs URL |
+
+- ✅ Paste the decisive command output or source line next to each changed claim
+- ✅ After fixing a claim, `rg` the whole repo for every sibling occurrence and fix all of them in the same PR
+- ✅ Give LLM reviewers the full edited sections plus the evidence, allow source fetching, and ask them to check facts, not only format
+- ❌ Never accept "verified by consensus" or a diff summary as evidence; unflagged lines are unreviewed, not correct
+- ❌ Never relabel a broken block as `text` to silence the linter; use `text` only for trees, pseudo-code and mixed shell/HCL
+
 ## PR Requirements
 
-PRs must include before/after evidence for affected scenarios in `tests/baseline-scenarios.md`. See `.github/PULL_REQUEST_TEMPLATE.md` for the full checklist.
+PRs must include before/after evidence for affected scenarios in `tests/baseline-scenarios.md`, plus the factual evidence required above. See `.github/PULL_REQUEST_TEMPLATE.md` for the full checklist.
 
 ## What Belongs Where
 

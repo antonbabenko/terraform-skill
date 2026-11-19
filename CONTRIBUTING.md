@@ -246,7 +246,8 @@ One excellent example beats many mediocre ones.
 
 **Good:**
 
-- Complete and runnable
+- Complete and runnable, and actually run: paste the output in the PR (see "Factual Verification Rules" in CLAUDE.md)
+- Passes `python3 .github/scripts/check_snippets.py <file>` (CI-enforced)
 - Commented to explain WHY
 - From a real scenario
 - Shows the pattern clearly

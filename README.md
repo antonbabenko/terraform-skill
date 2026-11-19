@@ -76,10 +76,10 @@ npx skills add https://github.com/antonbabenko/terraform-skill
 <summary>Gemini CLI</summary>
 
 ```bash
-gemini extensions install https://github.com/antonbabenko/terraform-skill
+gemini skills install https://github.com/antonbabenko/terraform-skill --path skills/terraform-skill
 ```
 
-Update with `gemini extensions update terraform-skill`.
+Update by re-running the install command.
 
 </details>
 
@@ -205,11 +205,13 @@ not duplicated.
 
 ```bash
 git clone https://github.com/antonbabenko/terraform-skill
-mkdir -p ~/.claude/plugins
-ln -s "$(pwd)/terraform-skill" ~/.claude/plugins/terraform-skill
+mkdir -p ~/.claude/skills
+ln -s "$(pwd)/terraform-skill/skills/terraform-skill" ~/.claude/skills/terraform-skill
+# or load the clone as a plugin for one session:
+claude --plugin-dir ./terraform-skill
 ```
 
-Claude Code autodiscovers the skill at `skills/terraform-skill/SKILL.md` on next launch. Edits to the clone are picked up live.
+Claude Code discovers personal skills in `~/.claude/skills/<name>/SKILL.md`. Edits to the clone are picked up live.
 
 </details>
 

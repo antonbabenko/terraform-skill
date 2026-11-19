@@ -230,10 +230,10 @@ See [State Management](references/state-management.md) for locking, migration, m
 
 | Component | Strategy | Example |
 |-----------|----------|---------|
-| Terraform runtime | Pin minor | `required_version = "~> 1.9"` |
+| Terraform runtime | Pin minor, allow patch | `required_version = "~> 1.9.0"` |
 | Providers | Pin major | `version = "~> 5.0"` |
 | Modules (prod) | Pin exact | `version = "5.1.2"` |
-| Modules (dev) | Allow patch | `version = "~> 5.1"` |
+| Modules (dev) | Allow patch | `version = "~> 5.1.0"` |
 
 Commit `.terraform.lock.hcl` intentionally. Keep provider/runtime upgrades in a separate PR from functional changes. See [Code Patterns: Version Management](references/code-patterns.md#version-management) for constraint syntax and upgrade workflow.
 
@@ -261,7 +261,7 @@ Before emitting a feature, verify the runtime floor. See [Code Patterns: Feature
 
 - **Terraform 1.0-1.5 (OpenTofu starts at 1.6)**: Terratest for integration, static analysis + plan validation only (no native tests).
 - **1.6+**: native `terraform test` / `tofu test` available — migrate simple unit tests, keep Terratest for complex integration.
-- **1.7+**: mock providers cut test cost — mock for unit tests, real runs for final integration.
+- **1.7+ (OpenTofu 1.8+)**: mock providers cut test cost — mock for unit tests, real runs for final integration.
 - **1.10+**: S3 native lock-file (`use_lockfile`) is the correct default for new configurations — DynamoDB locking is no longer required.
 - **1.11+**: `write_only` arguments for secret handling keep credentials out of state.
 - **Terraform vs OpenTofu**: both supported. For licensing, governance, and feature delta, see [Quick Reference: Terraform vs OpenTofu](references/quick-reference.md#terraform-vs-opentofu-comparison).
